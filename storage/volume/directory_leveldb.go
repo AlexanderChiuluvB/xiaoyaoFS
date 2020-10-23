@@ -19,7 +19,6 @@ func NewLeveldbDirectory(dir string) (d *LeveldbDirectory, err error) {
 	if err != nil {
 		return nil, err
 	}
-	//d.iter = d.db.NewIterator(nil,nil)
 	return
 }
 

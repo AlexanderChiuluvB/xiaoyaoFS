@@ -33,7 +33,7 @@ func NewVolume(vid uint64, dir string) (v *Volume, err error) {
 	if dir == "" {
 		dir = DefaultDir
 	}
-	volumeFilePath := filepath.Join(dir, strconv.FormatUint(vid, 10) + ".data")
+	volumeFilePath := filepath.Join(dir, strconv.FormatUint(vid, 10) + ".volume")
 	v = new(Volume)
 	v.ID = vid
 	v.Path = dir
@@ -124,11 +124,10 @@ func (v *Volume) allocSpace(fileBodySize uint64, filenameSize uint64) (offset ui
 // 1. alloc space
 // 2. set needle's header
 // 3. create meta info
-func (v *Volume) NewNeedle(id uint64, fileName string, data []byte) (n *Needle, err error) {
+func (v *Volume) NewNeedle(id uint64, fileName string, fileSize uint64) (n *Needle, err error) {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
-	fileSize := uint64(len(data))
 	fileNameSize := uint64(len(fileName))
 	offset, err := v.allocSpace(fileSize, fileNameSize)
 	if err != nil {

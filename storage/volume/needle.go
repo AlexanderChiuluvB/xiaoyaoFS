@@ -9,7 +9,7 @@ import (
 )
 
 var errSmallNeedle = errors.New("needle预分配的空间太小")
-const FixedNeedleSize int = 40
+const FixedNeedleSize uint64 = 40
 
 type Needle struct {
 	Id uint64
@@ -26,7 +26,7 @@ func MarshalBinary(N *Needle) ([]byte, error) {
 	if N == nil {
 		return nil, errors.New("Nil needle")
 	}
-	data := make([]byte, FixedNeedleSize+ len(N.FileName))
+	data := make([]byte, FixedNeedleSize+ uint64(len(N.FileName)))
 	binary.BigEndian.PutUint64(data[0:8], N.Id)
 	binary.BigEndian.PutUint64(data[8:16], N.FileSize)
 	binary.BigEndian.PutUint64(data[16:24], N.NeedleOffset)
@@ -54,33 +54,33 @@ func UnMarshalBinary(data []byte) (N *Needle, err error){
 }
 
 func (f *Needle)Read(b []byte) (n int, err error) {
-	start := f.NeedleOffset + uint64(FixedNeedleSize) + uint64(len(f.FileName)) + f.CurrentOffset
+	start := f.NeedleOffset + FixedNeedleSize + uint64(len(f.FileName)) + f.CurrentOffset
 	end := start + f.FileSize
 	length := end - start
 	if len(b) > int(length) {
 		b = b[:length]
 	}
 	n, err = f.File.ReadAt(b, int64(start))
-	f.CurrentOffset+= uint64(n)
+	f.CurrentOffset += uint64(n)
 	if f.CurrentOffset >= f.FileSize {
 		err = io.EOF
 	}
-	return
+	return n, nil
 }
 
 func (f *Needle)Write(b []byte) (n int, err error) {
-	start := f.NeedleOffset + uint64(FixedNeedleSize) + uint64(len(f.FileName)) + f.CurrentOffset
+	start := f.NeedleOffset + FixedNeedleSize + uint64(len(f.FileName)) + f.CurrentOffset
 	end := start + f.FileSize
 	length := end - start
 
 	if len(b) > int(length) {
 		return 0, errSmallNeedle
 	} else {
-		n, err := f.File.WriteAt(b, int64(start))
+		num, err := f.File.WriteAt(b, int64(start))
 		if err != nil {
-			return n, err
+			return num, err
 		}
-		f.CurrentOffset += uint64(n)
-		return n, nil
+		f.CurrentOffset += uint64(num)
+		return num, nil
 	}
 }

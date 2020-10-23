@@ -21,7 +21,7 @@ func TestNewVolume_NewNeedle(t *testing.T) {
 	defer os.RemoveAll(testDir)
 	v, err := NewVolume(1, testDir)
 	assert.NoError(t, err)
-	n, err := v.NewNeedle(1, "test.txt", []byte("test"))
+	n, err := v.NewNeedle(1, "test.txt", uint64(len([]byte("test"))))
 	defer v.DelNeedle(1)
 	assert.NoError(t, err)
 	assert.Equal(t, "test.txt", n.FileName)
@@ -29,7 +29,7 @@ func TestNewVolume_NewNeedle(t *testing.T) {
 	assert.Equal(t, uint64(8), n.NeedleOffset)
 	t.Logf("%+v", n)
 
-	n2, err := v.NewNeedle(2, "test.jpg", []byte("test"))
+	n2, err := v.NewNeedle(2, "test.jpg", uint64(len([]byte("test"))))
 	defer v.DelNeedle(2)
 	assert.NoError(t, err)
 	assert.Equal(t, "test.jpg", n2.FileName)
