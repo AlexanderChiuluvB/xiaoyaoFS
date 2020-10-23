@@ -160,3 +160,20 @@ func (v *Volume) NewNeedle(id uint64, fileName string, fileSize uint64) (n *Need
 	err = v.Directory.New(n)
 	return n, err
 }
+
+func (v *Volume) NewFile(data *[]byte, fileName string) (id uint64, err error){
+	id = UniqueId()
+	needle, err := v.NewNeedle(id, fileName, uint64(len(*data)))
+	if err != nil {
+		return id, fmt.Errorf("new needle : %v", err)
+	}
+	_, err = needle.Write(*data)
+	if err != nil {
+		return id, fmt.Errorf("needle write error %v", err)
+	}
+	return id, nil
+}
+
+func UniqueId() (id uint64) {
+	return uint64(time.Now().UnixNano())
+}

@@ -83,18 +83,19 @@ func TestNeedle_MultiReadWrite(t *testing.T) {
 	}
 }
 
-/*
+
 func TestVolume_DelNeedle(t *testing.T) {
-	v, err := NewVolume(1, "/tmp/fs")
+	testDir := "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/test"
+	os.Mkdir(testDir, os.ModePerm)
+	defer os.RemoveAll(testDir)
+	v, err := NewVolume(1, testDir)
 	assert.NoError(t, err)
-	id,  err := v.NewFile([]byte("aaa"), "1")
+	data := []byte("aaa")
+	id, err := v.NewFile(&data, "1.txt")
 	assert.NoError(t, err)
 	t.Log("New:", id)
 	assert.True(t, v.Directory.Has(id))
-	v.Print()
 	v.DelNeedle(id)
-	v.Print()
 	assert.False(t, v.Directory.Has(id))
 
 }
- */
