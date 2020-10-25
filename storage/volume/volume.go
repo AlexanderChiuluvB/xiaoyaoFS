@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const (
+var (
 	DefaultDir      string = "/tmp/fs"
 	MaxVolumeSize   uint64 = 1 << 36 //64GB
 	VolumeIndexSize uint64 = 8       //每个Volume File用1byte来存储当前的offset的偏移量
@@ -27,6 +27,7 @@ type Volume struct {
 	File *os.File // Volume File 用一个Byte来存储当前的Offset
 	Directory Directory
 	lock sync.Mutex
+	Writeable bool
 }
 
 func NewVolume(vid uint64, dir string) (v *Volume, err error) {
@@ -105,12 +106,12 @@ func (v *Volume) SetCurrentIndex(currentIndex uint64) (err error) {
 	return
 }
 
-func (v *Volume) remainingSpace() uint64 {
+func (v *Volume) RemainingSpace() uint64 {
 	return v.MaxSize - v.CurrentOffset
 }
 
 func (v *Volume) allocSpace(fileBodySize uint64, filenameSize uint64) (offset uint64, err error) {
-	remainSize := v.remainingSpace()
+	remainSize := v.RemainingSpace()
 	totalSize := fileBodySize + filenameSize + uint64(FixedNeedleSize)
 	if totalSize > remainSize {
 		return v.CurrentOffset, errors.New(fmt.Sprintf("volume remain size too small, remainSize %d, allocSize %d",
@@ -162,7 +163,6 @@ func (v *Volume) NewNeedle(id uint64, fileName string, fileSize uint64) (n *Need
 }
 
 func (v *Volume) NewFile(data *[]byte, fileName string) (id uint64, err error){
-	id = UniqueId()
 	needle, err := v.NewNeedle(id, fileName, uint64(len(*data)))
 	if err != nil {
 		return id, fmt.Errorf("new needle : %v", err)
@@ -174,6 +174,17 @@ func (v *Volume) NewFile(data *[]byte, fileName string) (id uint64, err error){
 	return id, nil
 }
 
+func (v *Volume) GetVolumeSize() uint64 {
+	fi, err := v.File.Stat()
+	if err != nil {
+		panic(err)
+	}
+	return uint64(fi.Size())
+}
+
 func UniqueId() (id uint64) {
+	//TODO 分布式唯一自增id snowflake
 	return uint64(time.Now().UnixNano())
 }
+
+
