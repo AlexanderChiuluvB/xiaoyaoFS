@@ -163,6 +163,7 @@ func (v *Volume) NewNeedle(id uint64, fileName string, fileSize uint64) (n *Need
 }
 
 func (v *Volume) NewFile(data *[]byte, fileName string) (id uint64, err error){
+	id = UniqueId()
 	needle, err := v.NewNeedle(id, fileName, uint64(len(*data)))
 	if err != nil {
 		return id, fmt.Errorf("new needle : %v", err)
