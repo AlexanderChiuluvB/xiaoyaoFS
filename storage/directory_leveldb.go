@@ -1,10 +1,11 @@
-package volume
+package storage
 
 import (
 	"encoding/binary"
-	"path/filepath"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
+	"path/filepath"
+	"strconv"
 )
 
 type LeveldbDirectory struct {
@@ -12,9 +13,9 @@ type LeveldbDirectory struct {
 	path string // leveldb 文件存放路径
 }
 
-func NewLeveldbDirectory(dir string) (d *LeveldbDirectory, err error) {
+func NewLeveldbDirectory(dir string, vid uint64) (d *LeveldbDirectory, err error) {
 	d = new(LeveldbDirectory)
-	d.path = filepath.Join(dir, "index") // TODO all volumes in one directory. Future: one volume one directory
+	d.path = filepath.Join(dir, strconv.FormatUint(vid, 10) + ".index")
 	d.db, err = leveldb.OpenFile(d.path, nil)
 	if err != nil {
 		return nil, err

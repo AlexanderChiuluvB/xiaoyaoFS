@@ -1,7 +1,6 @@
-package store
+package storage
 
 import (
-	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage/volume"
 	"time"
 )
 
@@ -23,13 +22,14 @@ type StorageStatus struct {
 
 	LastHeartbeat   time.Time `json:"-"`
 
-	VStatusList     []*volume.VolumeStatus
+	VStatusList     []*VolumeStatus
 }
 
 func (ss *StorageStatus) IsAlive() bool {
 	return ss.LastHeartbeat.Add(MaxHeartbeatDuration).After(time.Now())
 }
 
+/*
 func (ss *StorageStatus) CreateVolume(volumeId uint64) error {
 	err := api.CreateVolume(ss.ApiHost, ss.ApiPort, volumeId)
 	if err != nil {
@@ -40,3 +40,4 @@ func (ss *StorageStatus) CreateVolume(volumeId uint64) error {
 		StoreStatus: ss, Writable: true, VolumeMaxFreeSize: 512 * 1 << 30})
 	return nil
 }
+*/

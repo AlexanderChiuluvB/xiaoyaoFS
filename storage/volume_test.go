@@ -1,4 +1,4 @@
-package volume
+package storage
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -36,7 +36,5 @@ func TestNewVolume_NewNeedle(t *testing.T) {
 	assert.Equal(t, uint64(4), n2.FileSize)
 	assert.Equal(t, uint64(60), n2.NeedleOffset)
 	t.Logf("%+v", n2)
-
-
 }
 

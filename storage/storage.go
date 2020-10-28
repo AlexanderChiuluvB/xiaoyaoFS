@@ -1,9 +1,7 @@
-package store
+package storage
 
 import (
 	"fmt"
-	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage/volume"
-	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/disk"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -20,7 +18,7 @@ var MaxDiskUsedPercent uint = 90
 
 // one store contains several volumes
 type Store struct {
-	Volumes map[uint64]*volume.Volume
+	Volumes map[uint64]*Volume
 	//TODO ZOOKEEPER
 	VolumesLock 	sync.Mutex // protect Volumes map
 
@@ -41,46 +39,73 @@ type Store struct {
 	MasterPort int
 }
 
-func NewStore(StoreDir string) (*Store, error) {
-	f, err := os.OpenFile(StoreDir, os.O_RDWR | os.O_CREATE, os.ModePerm)
-	if err != nil {
+func NewStore(config *Config) (*Store, error) {
+	// create if not exists
+	f, err := os.OpenFile(config.StoreDir, os.O_RDWR, 0)
+	if os.IsNotExist(err) {
 		panic(err)
 	}
-	defer f.Close()
+	f.Close()
 
 	store := new(Store)
-	store.StoreDir = StoreDir
+	store.StoreDir = config.StoreDir
 
-	volumeInfos, err := ioutil.ReadDir(StoreDir)
+	volumeInfos, err := ioutil.ReadDir(config.StoreDir)
 	if err != nil {
 		panic(err)
 	}
 
-	store.Volumes = make(map[uint64]*volume.Volume)
+	store.Volumes = make(map[uint64]*Volume)
 
 	for _, volumeFile := range volumeInfos {
 		volumeFileName := volumeFile.Name()
 		if strings.HasSuffix(volumeFileName, ".volume") {
-			volumeId, err := strconv.ParseUint(volumeFileName[:len(volumeFileName)-5], 10, 64)
+			volumeId, err := strconv.ParseUint(volumeFileName[:len(volumeFileName)-7], 10, 64)
 			if err != nil {
 				return nil, err
 			}
-			store.Volumes[volumeId], err = volume.NewVolume(volumeId, StoreDir)
+			store.Volumes[volumeId], err = NewVolume(volumeId, config.StoreDir)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	//TODO use config file to set
-	store.AdminHost = "localhost"
-	store.AdminPort = 7800
+	if config.StoreAdminHost == "" {
+		store.AdminHost = "localhost"
+	} else {
+		store.AdminHost = config.StoreAdminHost
+	}
 
-	store.ApiHost = "localhost"
-	store.ApiPort = 7900
+	if config.StoreAdminPort == 0 {
+		store.AdminPort = 7800
+	} else {
+		store.AdminPort = config.StoreAdminPort
+	}
 
-	store.MasterHost = "localhost"
-	store.MasterPort = 8888
+	if config.StoreApiHost == "" {
+		store.ApiHost = "localhost"
+	} else {
+		store.ApiHost = config.StoreApiHost
+	}
+
+	if config.StoreApiPort == 0 {
+		store.ApiPort = 7900
+	} else {
+		store.ApiPort = config.StoreApiPort
+	}
+
+	if config.MasterHost == "" {
+		store.MasterHost = "localhost"
+	} else {
+		store.MasterHost = config.MasterHost
+	}
+
+	if config.MasterPort == 0 {
+		store.MasterPort = 8888
+	} else {
+		store.MasterPort = config.MasterPort
+	}
 
 	store.AdminServer = http.NewServeMux()
 	store.ApiServer = http.NewServeMux()
@@ -94,7 +119,7 @@ func NewStore(StoreDir string) (*Store, error) {
 }
 
 func (store *Store) Start() {
-	go store.HeartBeat()
+	//go store.HeartBeat()
 
 	go func() {
 		err := http.ListenAndServe(fmt.Sprintf("%s:%d", store.AdminHost, store.AdminPort), store.AdminServer)
@@ -109,6 +134,7 @@ func (store *Store) Start() {
 	}
 }
 
+/*
 func (store *Store) HeartBeat() {
 	//TODO heartbeat with zookeeper
 	
@@ -122,18 +148,18 @@ func (store *Store) HeartBeat() {
 		ss.AdminPort = store.AdminPort
 		ss.ApiHost = store.ApiHost
 		ss.ApiPort = store.ApiPort
-		ss.VStatusList = make([]*volume.VolumeStatus, 0, len(store.Volumes))
+		ss.VStatusList = make([]*master.VolumeStatus, 0, len(store.Volumes))
 		
 		diskUsage, _ := disk.DiskUsage(store.StoreDir)
 		ss.DiskFree = diskUsage.Free
 		ss.DiskSize = diskUsage.Size
 		ss.DiskUsed = diskUsage.Used
-		ss.VolumeMaxSize = volume.MaxVolumeSize
+		ss.VolumeMaxSize = MaxVolumeSize
 
 		diskUsedPercent := uint(float64(diskUsage.Used) / float64(diskUsage.Size) * 100)
 		if diskUsedPercent >= MaxDiskUsedPercent {
 			//禁止所有volume再进行truncate
-			volume.MaxVolumeSize = 0
+			MaxVolumeSize = 0
 			ss.CanCreateVolume = false
 		} else {
 			ss.CanCreateVolume = true
@@ -141,7 +167,7 @@ func (store *Store) HeartBeat() {
 
 		//把更新后的status传回给master，由master来决定是否有必要创建新的volume
 		for vid, v := range store.Volumes {
-			volumeStatus := new(volume.VolumeStatus)
+			volumeStatus := new(master.VolumeStatus)
 			volumeStatus.VolumeId = vid
 			volumeStatus.VolumeSize = v.GetVolumeSize()
 			volumeStatus.Writable = v.Writeable
@@ -153,5 +179,5 @@ func (store *Store) HeartBeat() {
 		<- tick.C
 	}
 }
-
+*/
 

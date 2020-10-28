@@ -1,4 +1,4 @@
-package volume
+package storage
 
 import (
 	"encoding/binary"
@@ -20,14 +20,14 @@ var (
 )
 
 type Volume struct {
-	ID uint64
-	MaxSize uint64
+	ID            uint64
+	MaxSize       uint64
 	CurrentOffset uint64 //当前最新文件所在的offset
-	Path string
-	File *os.File // Volume File 用一个Byte来存储当前的Offset
-	Directory Directory
-	lock sync.Mutex
-	Writeable bool
+	Path          string
+	File          *os.File // Volume File 用一个Byte来存储当前的Offset
+	Directory     Directory
+	lock          sync.Mutex
+	Writeable     bool
 }
 
 func NewVolume(vid uint64, dir string) (v *Volume, err error) {
@@ -42,7 +42,7 @@ func NewVolume(vid uint64, dir string) (v *Volume, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("open file :%v", err)
 	}
-	v.Directory, err = NewLeveldbDirectory(dir)
+	v.Directory, err = NewLeveldbDirectory(dir, vid)
 	if err != nil {
 		return nil, fmt.Errorf("new leveldb directory :%v", err)
 	}

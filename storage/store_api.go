@@ -1,8 +1,7 @@
-package store
+package storage
 
 import (
 	"fmt"
-	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage/volume"
 	"io"
 	"io/ioutil"
 	"mime"
@@ -69,7 +68,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 
 func (s *Store) Put(w http.ResponseWriter, r *http.Request) {
 	var (
-		v *volume.Volume
+		v *Volume
 		vid uint64
 		err error
 	)
@@ -82,9 +81,16 @@ func (s *Store) Put(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("strconv.ParseInt(\"%s\") error(%v)", r.FormValue("vid"), err), http.StatusBadRequest)
 		return
 	}
+
 	v = s.Volumes[vid]
 	if v == nil {
 		http.Error(w, "can't find volume", http.StatusNotFound)
+		return
+	}
+
+	err = r.ParseMultipartForm( 32 << 20)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -95,6 +101,7 @@ func (s *Store) Put(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
+	// todo use io.Copy to speed up bytes copy
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -114,7 +121,7 @@ func (s *Store) Del(w http.ResponseWriter, r *http.Request) {
 	var (
 		err      error
 		fid, vid uint64
-		v        *volume.Volume
+		v        *Volume
 	)
 	if r.Method != "POST" {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)

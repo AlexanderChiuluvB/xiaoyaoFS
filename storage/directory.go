@@ -1,4 +1,4 @@
-package volume
+package storage
 
 type Directory interface {
 	Get(id uint64) (n *Needle, err error)

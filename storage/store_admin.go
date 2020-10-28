@@ -1,8 +1,7 @@
-package store
+package storage
 
 import (
 	"fmt"
-	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage/volume"
 	"net/http"
 	"strconv"
 )
@@ -10,7 +9,7 @@ import (
 func (s *Store) AddVolume(w http.ResponseWriter, r *http.Request) {
 	var (err error
 		vid uint64
-		v *volume.Volume
+		v *Volume
 		)
 	if r.Method != "POST" {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -21,8 +20,8 @@ func (s *Store) AddVolume(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("strconv.ParseInt(\"%s\") error(%v)", r.FormValue("vid"), err), http.StatusBadRequest)
 		return
 	}
-	if v, err = volume.NewVolume(vid, s.StoreDir); err != nil {
-		http.Error(w, fmt.Sprintf("create new volume for vid %d in dir %s error(%v)", r.FormValue("vid"),s.StoreDir,err),
+	if v, err = NewVolume(vid, s.StoreDir); err != nil {
+		http.Error(w, fmt.Sprintf("create new volume for vid %s in dir %s error(%v)", r.FormValue("vid"), s.StoreDir,err),
 			http.StatusInternalServerError)
 		return
 	}
@@ -30,3 +29,4 @@ func (s *Store) AddVolume(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	return
 }
+
