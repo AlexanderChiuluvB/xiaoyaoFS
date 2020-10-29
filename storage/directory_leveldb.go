@@ -74,6 +74,10 @@ func (d *LeveldbDirectory) Iter() (iter Iterator) {
 	return levelIt
 }
 
+func (d *LeveldbDirectory) Close() {
+	d.db.Close()
+}
+
 type LeveldbIterator struct {
 	iter iterator.Iterator
 }

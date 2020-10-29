@@ -48,8 +48,7 @@ func TestStorageAPI(t *testing.T) {
 	fmt.Println(len(body))
 
 	buf.Reset()
-	buf.WriteString("test-string")
-	if resp, err = http.Post("http://localhost:7900/put", "application/x-www-form-urlencoded", buf); err != nil {
+	if resp, err = http.Post("http://localhost:7900/put?vid=1", "multipart/form-data", buf); err != nil {
 		t.Errorf("http.Post error(%v)", err)
 		t.FailNow()
 	}

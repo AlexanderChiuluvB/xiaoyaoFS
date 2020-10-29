@@ -119,6 +119,7 @@ func NewStore(config *Config) (*Store, error) {
 }
 
 func (store *Store) Start() {
+	defer store.Close()
 	//go store.HeartBeat()
 
 	go func() {
@@ -131,6 +132,12 @@ func (store *Store) Start() {
 	err := http.ListenAndServe(fmt.Sprintf("%s:%d", store.ApiHost, store.ApiPort), store.ApiServer)
 	if err != nil {
 		panic(err)
+	}
+}
+
+func (store *Store) Close() {
+	for _, v := range store.Volumes {
+		v.Directory.Close()
 	}
 }
 
