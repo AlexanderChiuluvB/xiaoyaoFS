@@ -119,7 +119,6 @@ func NewStore(config *Config) (*Store, error) {
 }
 
 func (store *Store) Start() {
-	defer store.Close()
 	//go store.HeartBeat()
 
 	go func() {

@@ -46,6 +46,7 @@ func NewVolume(vid uint64, dir string) (v *Volume, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("new leveldb directory :%v", err)
 	}
+	//defer v.Directory.Close()
 	v.lock = sync.Mutex{}
 	v.MaxSize = MaxVolumeSize
 

@@ -1,8 +1,8 @@
 package storage
 
 import (
+	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"mime"
 	"net/http"
@@ -43,7 +43,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 
 	n, err := v.GetNeedle(fid)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Get needle of fid %d if volume vid %d error %v", fid, vid, err), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Get Needle of fid %d if volume vid %d error %v", fid, vid, err), http.StatusBadRequest)
 		return
 	}
 
@@ -61,7 +61,19 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	if etagMatch {
 		w.WriteHeader(http.StatusNotModified)
 	} else if r.Method != http.MethodHead {
-		io.Copy(w, n.File)
+		//TODO: io.Copy
+		var needleData []byte
+		n.File.Seek(int64(n.NeedleOffset + FixedNeedleSize + uint64(len(n.FileName)) + n.CurrentOffset),0)
+		needleData, err = ioutil.ReadAll(n.File)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Read Needle data error %v", err), http.StatusBadRequest)
+			return
+		}
+		_, err = w.Write(needleData)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("write to http.writer error %v", err), http.StatusBadRequest)
+			return
+		}
 	}
 
 }
@@ -102,13 +114,20 @@ func (s *Store) Put(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = v.NewFile(&data, header.Filename)
+	fid, err := v.NewFile(&data, header.Filename)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fidBytes, err := json.Marshal(fid)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	w.Write(fidBytes)
 }
 
 func (s *Store) Del(w http.ResponseWriter, r *http.Request) {
