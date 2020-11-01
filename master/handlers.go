@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 )
@@ -42,12 +43,20 @@ func (m *Master) getFile(w http.ResponseWriter, r *http.Request) {
 
 
 func (m *Master) uploadFile(w http.ResponseWriter, r *http.Request) {
-	file, _, err := r.FormFile("file")
+	file, header, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, "r.FromFile: " + err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer file.Close()
+
+	var dst string
+	if r.URL.Path[len(r.URL.Path) - 1] == '/' {
+		dst = r.URL.Path + filepath.Base(header.Filename)
+	} else {
+		dst = r.URL.Path
+	}
+	fileName := filepath.Base(dst)
 
 	var fileSize int64
 	switch file.(type){
@@ -76,7 +85,7 @@ func (m *Master) uploadFile(w http.ResponseWriter, r *http.Request) {
 		go func(vs *storage.VolumeStatus) {
 			defer wg.Done()
 			//给该vid对应的所有volume上传文件
-			err = vs.uploadFile(fid, data)
+			err = vs.UploadFile(fid, &data, fileName)
 			if err != nil {
 				uploadErr = append(uploadErr, fmt.Errorf("host: %s port: %d error: %s", vs.StoreStatus.ApiHost, vs.StoreStatus.ApiPort, err))
 			}
@@ -86,7 +95,7 @@ func (m *Master) uploadFile(w http.ResponseWriter, r *http.Request) {
 
 	if len(uploadErr) !=0 {
 		for _, vStatus := range writableVolumeStatusList {
-			go vStatus.delete(fid)
+			go vStatus.Delete(fid)
 		}
 		errStr := ""
 		for _, err := range uploadErr {
@@ -96,7 +105,7 @@ func (m *Master) uploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		//update meta data
-		err = m.Metadata.Set(r.URL.Path, writableVolumeStatusList[0].VolumdId, fid)
+		err = m.Metadata.Set(dst, writableVolumeStatusList[0].VolumeId, fid)
 		if err != nil {
 			http.Error(w, "m.Metadata.Set: " + err.Error(), http.StatusInternalServerError)
 			return
@@ -118,7 +127,7 @@ func (m *Master) deleteFile(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		http.Error(w, fmt.Sprintf("Cant find volume %d", vid), http.StatusNotFound)
 		return
-	} else if !m.volumesIsValid(vStatusList) || !volumesIsWritable(vStatusList, 0) {
+	} else if !m.isValidVolumes(vStatusList, 0) {
 		http.Error(w, "can't delete file, because its readonly.", http.StatusNotAcceptable)
 	}
 
@@ -127,7 +136,7 @@ func (m *Master) deleteFile(w http.ResponseWriter, r *http.Request) {
 	for _, vStatus := range vStatusList {
 		wg.Add(1)
 		go func(vStatus *storage.VolumeStatus) {
-			e := vStatus.delete(fid)
+			e := vStatus.Delete(fid)
 			if e != nil {
 				deleteErr = append(
 					deleteErr,

@@ -1,6 +1,7 @@
 package master
 
 import (
+	"errors"
 	"fmt"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage"
 	"net/http"
@@ -55,6 +56,30 @@ func (m *Master) Start() {
 
 func (m *Master) Close() {
 	m.Metadata.Close()
+}
+
+func (m *Master) getWritableVolumes(size uint64) ([]*storage.VolumeStatus, error) {
+	m.MapMutex.RLock()
+	defer m.MapMutex.RUnlock()
+
+	for _, vStatusList := range m.VolumeStatusListMap {
+		if m.isValidVolumes(vStatusList, size){
+			return vStatusList, nil
+		}
+	}
+	return nil, errors.New("can't find writable volumes")
+}
+
+func (m *Master) isValidVolumes(vStatusList []*storage.VolumeStatus, size uint64) (bool) {
+	for _, vs := range vStatusList {
+		if !vs.StoreStatus.IsAlive() {
+			return false
+		}
+		if !vs.IsWritable(size) {
+			return false
+		}
+	}
+	return len(vStatusList) != 0
 }
 
 
