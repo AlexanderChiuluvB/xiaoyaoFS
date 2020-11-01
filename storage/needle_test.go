@@ -91,11 +91,12 @@ func TestVolume_DelNeedle(t *testing.T) {
 	v, err := NewVolume(1, testDir)
 	assert.NoError(t, err)
 	data := []byte("aaa")
-	id, err := v.NewFile(&data, "1.txt")
+	err = v.NewFile(1, &data, "1.txt")
 	assert.NoError(t, err)
-	t.Log("New:", id)
-	assert.True(t, v.Directory.Has(id))
-	v.DelNeedle(id)
-	assert.False(t, v.Directory.Has(id))
+	t.Log("New:", 1)
+	assert.True(t, v.Directory.Has(1))
+	err = v.DelNeedle(1)
+	assert.NoError(t, err)
+	assert.False(t, v.Directory.Has(1))
 
 }

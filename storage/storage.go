@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/disk"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -23,11 +24,6 @@ type Store struct {
 	VolumesLock 	sync.Mutex // protect Volumes map
 
 	StoreDir string //Store对应的目录，该目录下存放着各个Volume File
-
-	//add/del volume
-	AdminServer *http.ServeMux
-	AdminHost string
-	AdminPort int
 
 	//get/upload/delete file
 	ApiServer *http.ServeMux
@@ -71,18 +67,6 @@ func NewStore(config *Config) (*Store, error) {
 		}
 	}
 
-	if config.StoreAdminHost == "" {
-		store.AdminHost = "localhost"
-	} else {
-		store.AdminHost = config.StoreAdminHost
-	}
-
-	if config.StoreAdminPort == 0 {
-		store.AdminPort = 7800
-	} else {
-		store.AdminPort = config.StoreAdminPort
-	}
-
 	if config.StoreApiHost == "" {
 		store.ApiHost = "localhost"
 	} else {
@@ -107,10 +91,9 @@ func NewStore(config *Config) (*Store, error) {
 		store.MasterPort = config.MasterPort
 	}
 
-	store.AdminServer = http.NewServeMux()
 	store.ApiServer = http.NewServeMux()
 
-	store.AdminServer.HandleFunc("/add_volume", store.AddVolume)
+	store.ApiServer.HandleFunc("/add_volume", store.AddVolume)
 	store.ApiServer.HandleFunc("/get", store.Get)
 	store.ApiServer.HandleFunc("/put", store.Put)
 	store.ApiServer.HandleFunc("/del", store.Del)
@@ -119,14 +102,7 @@ func NewStore(config *Config) (*Store, error) {
 }
 
 func (store *Store) Start() {
-	//go store.HeartBeat()
-
-	go func() {
-		err := http.ListenAndServe(fmt.Sprintf("%s:%d", store.AdminHost, store.AdminPort), store.AdminServer)
-		if err != nil {
-			panic(err)
-		}
-	}()
+	go store.HeartBeat()
 
 	err := http.ListenAndServe(fmt.Sprintf("%s:%d", store.ApiHost, store.ApiPort), store.ApiServer)
 	if err != nil {
@@ -140,7 +116,7 @@ func (store *Store) Close() {
 	}
 }
 
-/*
+
 func (store *Store) HeartBeat() {
 	//TODO heartbeat with zookeeper
 	
@@ -149,12 +125,9 @@ func (store *Store) HeartBeat() {
 
 	for {
 		ss := new(StorageStatus)
-		ss.AdminHost = store.AdminHost
-		ss.AdminHost = store.AdminHost
-		ss.AdminPort = store.AdminPort
 		ss.ApiHost = store.ApiHost
 		ss.ApiPort = store.ApiPort
-		ss.VStatusList = make([]*master.VolumeStatus, 0, len(store.Volumes))
+		ss.VStatusList = make([]*VolumeStatus, 0, len(store.Volumes))
 		
 		diskUsage, _ := disk.DiskUsage(store.StoreDir)
 		ss.DiskFree = diskUsage.Free
@@ -173,7 +146,7 @@ func (store *Store) HeartBeat() {
 
 		//把更新后的status传回给master，由master来决定是否有必要创建新的volume
 		for vid, v := range store.Volumes {
-			volumeStatus := new(master.VolumeStatus)
+			volumeStatus := new(VolumeStatus)
 			volumeStatus.VolumeId = vid
 			volumeStatus.VolumeSize = v.GetVolumeSize()
 			volumeStatus.Writable = v.Writeable
@@ -181,9 +154,9 @@ func (store *Store) HeartBeat() {
 			ss.VStatusList = append(ss.VStatusList, volumeStatus)
 		}
 
-		api.Heartbeat(store.MasterHost, store.MasterPort, ss)
+		//Heartbeat(store.MasterHost, store.MasterPort, ss)
 		<- tick.C
 	}
 }
-*/
+
 

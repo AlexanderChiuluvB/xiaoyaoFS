@@ -9,8 +9,6 @@ import (
 type Config struct {
 	StoreDir string
 
-	StoreAdminHost string
-	StoreAdminPort int
 	StoreApiHost string
 	StoreApiPort int
 

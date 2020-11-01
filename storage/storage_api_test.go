@@ -2,7 +2,6 @@ package storage
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -35,13 +34,14 @@ func TestStorageAPI(t *testing.T) {
 	go store.Start()
 
 	buf.Reset()
-	resp, err = http.Post("http://localhost:7800/add_volume?vid=2", "application/x-www-form-urlencoded", nil)
+	//TODO 增加删除Volume的接口
+	/*resp, err = http.Post("http://localhost:7900/add_volume?vid=3", "application/x-www-form-urlencoded", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 	defer resp.Body.Close()
 
 	body, err = ioutil.ReadAll(resp.Body)
-	assert.NoError(t, err)
+	assert.NoError(t, err)*/
 
 	//put file
 	file, err := os.Open("../test/logo.png")
@@ -63,7 +63,7 @@ func TestStorageAPI(t *testing.T) {
 	assert.NoError(t, err)
 	mPart.Close()
 
-	req, err := http.NewRequest(http.MethodPost, "http://localhost:7900/put?vid=2", writerBuf)
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:7900/put?vid=3&fid=1", writerBuf)
 	if err != nil {
 		return
 	}
@@ -77,11 +77,9 @@ func TestStorageAPI(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 	body, err = ioutil.ReadAll(resp.Body)
 	assert.NoError(t, err)
-	var fid uint64
-	err = json.Unmarshal(body, &fid)
-	assert.NoError(t, err)
+
 	//test get
-	resp, err = http.Get(fmt.Sprintf("http://localhost:7900/get?vid=2&fid=%d", fid))
+	resp, err = http.Get(fmt.Sprintf("http://localhost:7900/get?vid=3&fid=1"))
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -89,5 +87,18 @@ func TestStorageAPI(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, len(expectedFileByte), len(body))
 	assert.Equal(t, expectedFileByte, body)
+
+	err = ioutil.WriteFile("../test/logo2.png", body, os.ModePerm)
+	assert.NoError(t, err)
+
+	req, err = http.NewRequest(http.MethodDelete, fmt.Sprintf("http://localhost:7900/del?vid=3&fid=1"), nil)
+	assert.NoError(t, err)
+
+	resp, err = http.DefaultClient.Do(req)
+	assert.NoError(t, err)
+
+	resp, err = http.Get(fmt.Sprintf("http://localhost:7900/get?vid=3&fid=1"))
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 }

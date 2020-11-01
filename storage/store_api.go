@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"mime"
@@ -60,18 +59,22 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	}
 	if etagMatch {
 		w.WriteHeader(http.StatusNotModified)
-	} else if r.Method != http.MethodHead {
+	} else {
 		//TODO: io.Copy
 		var needleData []byte
-		n.File.Seek(int64(n.NeedleOffset + FixedNeedleSize + uint64(len(n.FileName)) + n.CurrentOffset),0)
+		_, err := n.File.Seek(int64(n.NeedleOffset + FixedNeedleSize + uint64(len(n.FileName)) + n.CurrentOffset),0)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("file seek error %v", err), http.StatusInternalServerError)
+			return
+		}
 		needleData, err = ioutil.ReadAll(n.File)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Read Needle data error %v", err), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Read Needle data error %v", err), http.StatusInternalServerError)
 			return
 		}
 		_, err = w.Write(needleData)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("write to http.writer error %v", err), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("write to http.writer error %v", err), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -82,6 +85,7 @@ func (s *Store) Put(w http.ResponseWriter, r *http.Request) {
 	var (
 		v *Volume
 		vid uint64
+		fid uint64
 		err error
 	)
 
@@ -93,7 +97,10 @@ func (s *Store) Put(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("strconv.ParseInt(\"%s\") error(%v)", r.FormValue("vid"), err), http.StatusBadRequest)
 		return
 	}
-
+	if fid, err = strconv.ParseUint(r.FormValue("fid"), 10, 64); err != nil {
+		http.Error(w, fmt.Sprintf("strconv.ParseInt(\"%s\") error(%v)", r.FormValue("fid"), err), http.StatusBadRequest)
+		return
+	}
 	v = s.Volumes[vid]
 	if v == nil {
 		http.Error(w, "can't find volume", http.StatusNotFound)
@@ -114,20 +121,13 @@ func (s *Store) Put(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fid, err := v.NewFile(&data, header.Filename)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	fidBytes, err := json.Marshal(fid)
+	err = v.NewFile(fid, &data, header.Filename)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	w.Write(fidBytes)
 }
 
 func (s *Store) Del(w http.ResponseWriter, r *http.Request) {
@@ -136,7 +136,7 @@ func (s *Store) Del(w http.ResponseWriter, r *http.Request) {
 		fid, vid uint64
 		v        *Volume
 	)
-	if r.Method != "POST" {
+	if r.Method != http.MethodDelete {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -163,6 +163,30 @@ func (s *Store) Del(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+
+func (s *Store) AddVolume(w http.ResponseWriter, r *http.Request) {
+	var (err error
+		vid uint64
+		v *Volume
+	)
+	if r.Method != "POST" {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if vid, err = strconv.ParseUint(r.FormValue("vid"), 10, 64); err != nil {
+		http.Error(w, fmt.Sprintf("strconv.ParseInt(\"%s\") error(%v)", r.FormValue("vid"), err), http.StatusBadRequest)
+		return
+	}
+	if v, err = NewVolume(vid, s.StoreDir); err != nil {
+		http.Error(w, fmt.Sprintf("create new volume for vid %s in dir %s error(%v)", r.FormValue("vid"), s.StoreDir,err),
+			http.StatusInternalServerError)
+		return
+	}
+	s.Volumes[vid] = v
+	w.WriteHeader(http.StatusCreated)
+	return
+}
 
 func get_content_type(filepath string) string {
 	content_type := "application/octet-stream"

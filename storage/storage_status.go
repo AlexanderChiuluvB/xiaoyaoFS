@@ -7,9 +7,6 @@ import (
 var MaxHeartbeatDuration  = time.Second * 10 //如果超过这个时间间隔仍然没有心跳认定失联
 
 type StorageStatus struct {
-	AdminHost string
-	AdminPort int
-
 	ApiHost string
 	ApiPort int
 
