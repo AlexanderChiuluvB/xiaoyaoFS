@@ -181,12 +181,13 @@ func (m *Master) heartbeat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	remoteIP := r.RemoteAddr[:strings.LastIndex(r.RemoteAddr, ":")]
-	if newStorageStatus.ApiHost == "" || newStorageStatus.ApiHost == "localhost" {
+	if newStorageStatus.ApiHost == ""  {
 		newStorageStatus.ApiHost = remoteIP
 	}
+
 	m.updateStorageStatus(newStorageStatus)
 
-	if m.needUpdateCreateVolume(newStorageStatus) {
+	if m.needCreateVolume(newStorageStatus) {
 		go m.createNewVolume(newStorageStatus)
 	}
 }

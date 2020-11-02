@@ -67,3 +67,7 @@ func (vs *VolumeStatus) UploadFile(fid uint64, data *[]byte, fileName string) er
 	return nil
 }
 
+func (vs *VolumeStatus) HasEnoughSpace() bool {
+	return vs.VolumeSize / vs.VolumeMaxFreeSize < 100
+}
+

@@ -3,13 +3,17 @@ module github.com/AlexanderChiuluvB/xiaoyaoFS
 go 1.15
 
 require (
+	github.com/AlexanderChiuluvB/bfs v2.1.0+incompatible
 	github.com/BurntSushi/toml v0.3.1
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/gorilla/mux v1.8.0 // indirect
-	github.com/seaweedfs/fuse v0.0.0-20190510212405-310228904eff // indirect
+	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
+	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/stretchr/testify v1.6.1
 	github.com/syndtr/goleveldb v1.0.0
+	github.com/tsuna/gohbase v0.0.0-20201030211314-79d7a74bc5e3
 	golang.org/x/sys v0.0.0-20201018230417-eeed37f84f13 // indirect
-	google.golang.org/grpc v1.33.0 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
+	gopkg.in/alecthomas/kingpin.v2 v2.2.6
+	gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405
+	modernc.org/mathutil v1.1.1 // indirect
+	modernc.org/strutil v1.1.0 // indirect
 )

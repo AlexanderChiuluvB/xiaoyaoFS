@@ -14,6 +14,8 @@ type Config struct {
 
 	MasterHost string
 	MasterPort int
+
+	HbaseHost string
 }
 
 // NewConfig new a config.
