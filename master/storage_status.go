@@ -1,7 +1,6 @@
-package storage
+package master
 
 import (
-	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage/api"
 	"time"
 )
 
@@ -29,7 +28,7 @@ func (ss *StorageStatus) IsAlive() bool {
 }
 
 func (ss *StorageStatus) CreateVolume(volumeId uint64) error {
-	err := api.CreateVolume(ss.ApiHost, ss.ApiPort, volumeId)
+	err := CreateVolume(ss.ApiHost, ss.ApiPort, volumeId)
 	if err != nil {
 		return err
 	}

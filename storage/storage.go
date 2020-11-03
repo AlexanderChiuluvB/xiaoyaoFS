@@ -2,8 +2,12 @@ package storage
 
 import (
 	"fmt"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/master"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage/volume"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/config"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/disk"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -19,7 +23,7 @@ var MaxDiskUsedPercent uint = 90
 
 // one store contains several volumes
 type Store struct {
-	Volumes map[uint64]*Volume
+	Volumes map[uint64]*volume.Volume
 	//TODO ZOOKEEPER
 	VolumesLock 	sync.Mutex // protect Volumes map
 
@@ -35,13 +39,15 @@ type Store struct {
 	MasterPort int
 }
 
-func NewStore(config *Config) (*Store, error) {
+func NewStore(config *config.Config) (*Store, error) {
 	// create if not exists
-	f, err := os.OpenFile(config.StoreDir, os.O_RDWR, 0)
+	_, err := os.Stat(config.StoreDir)
 	if os.IsNotExist(err) {
-		panic(err)
+		errDir := os.MkdirAll(config.StoreDir, os.ModePerm)
+		if errDir != nil {
+			log.Fatal(err)
+		}
 	}
-	f.Close()
 
 	store := new(Store)
 	store.StoreDir = config.StoreDir
@@ -51,7 +57,7 @@ func NewStore(config *Config) (*Store, error) {
 		panic(err)
 	}
 
-	store.Volumes = make(map[uint64]*Volume)
+	store.Volumes = make(map[uint64]*volume.Volume)
 
 	for _, volumeFile := range volumeInfos {
 		volumeFileName := volumeFile.Name()
@@ -60,7 +66,7 @@ func NewStore(config *Config) (*Store, error) {
 			if err != nil {
 				return nil, err
 			}
-			store.Volumes[volumeId], err = NewVolume(volumeId, config.StoreDir)
+			store.Volumes[volumeId], err = volume.NewVolume(volumeId, config.StoreDir)
 			if err != nil {
 				return nil, err
 			}
@@ -124,21 +130,21 @@ func (store *Store) HeartBeat() {
 	defer tick.Stop()
 
 	for {
-		ss := new(StorageStatus)
+		ss := new(master.StorageStatus)
 		ss.ApiHost = store.ApiHost
 		ss.ApiPort = store.ApiPort
-		ss.VStatusList = make([]*VolumeStatus, 0, len(store.Volumes))
+		ss.VStatusList = make([]*master.VolumeStatus, 0, len(store.Volumes))
 		
 		diskUsage, _ := disk.DiskUsage(store.StoreDir)
 		ss.DiskFree = diskUsage.Free
 		ss.DiskSize = diskUsage.Size
 		ss.DiskUsed = diskUsage.Used
-		ss.VolumeMaxSize = MaxVolumeSize
+		ss.VolumeMaxSize = volume.MaxVolumeSize
 
 		diskUsedPercent := uint(float64(diskUsage.Used) / float64(diskUsage.Size) * 100)
 		if diskUsedPercent >= MaxDiskUsedPercent {
 			//禁止所有volume再进行truncate
-			MaxVolumeSize = 0
+			volume.MaxVolumeSize = 0
 			ss.CanCreateVolume = false
 		} else {
 			ss.CanCreateVolume = true
@@ -146,7 +152,7 @@ func (store *Store) HeartBeat() {
 
 		//把更新后的status传回给master，由master来决定是否有必要创建新的volume
 		for vid, v := range store.Volumes {
-			volumeStatus := new(VolumeStatus)
+			volumeStatus := new(master.VolumeStatus)
 			volumeStatus.VolumeId = vid
 			volumeStatus.VolumeSize = v.GetVolumeSize()
 			volumeStatus.Writable = v.Writeable
@@ -154,7 +160,10 @@ func (store *Store) HeartBeat() {
 			ss.VStatusList = append(ss.VStatusList, volumeStatus)
 		}
 
-		//Heartbeat(store.MasterHost, store.MasterPort, ss)
+		err := master.Heartbeat(store.MasterHost, store.MasterPort, ss)
+		if err != nil {
+			panic(err)
+		}
 		<- tick.C
 	}
 }

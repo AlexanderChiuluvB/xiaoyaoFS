@@ -1,4 +1,4 @@
-package storage
+package volume
 
 import (
 	"github.com/stretchr/testify/assert"

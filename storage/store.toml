@@ -1,7 +1,0 @@
-StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/storeDir"
-
-StoreApiHost = "localhost"
-StoreApiPort = 7900
-
-MasterHost = "localhost"
-MasterPort = 8888

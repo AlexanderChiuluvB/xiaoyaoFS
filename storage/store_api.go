@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage/volume"
 	"io/ioutil"
 	"mime"
 	"net/http"
@@ -62,7 +63,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	} else {
 		//TODO: io.Copy
 		var needleData []byte
-		_, err := n.File.Seek(int64(n.NeedleOffset + FixedNeedleSize + uint64(len(n.FileName)) + n.CurrentOffset),0)
+		_, err := n.File.Seek(int64(n.NeedleOffset +volume.FixedNeedleSize+ uint64(len(n.FileName)) + n.CurrentOffset),0)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("file seek error %v", err), http.StatusInternalServerError)
 			return
@@ -83,7 +84,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 
 func (s *Store) Put(w http.ResponseWriter, r *http.Request) {
 	var (
-		v *Volume
+		v *volume.Volume
 		vid uint64
 		fid uint64
 		err error
@@ -134,7 +135,7 @@ func (s *Store) Del(w http.ResponseWriter, r *http.Request) {
 	var (
 		err      error
 		fid, vid uint64
-		v        *Volume
+		v        *volume.Volume
 	)
 	if r.Method != http.MethodDelete {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -167,7 +168,7 @@ func (s *Store) Del(w http.ResponseWriter, r *http.Request) {
 func (s *Store) AddVolume(w http.ResponseWriter, r *http.Request) {
 	var (err error
 		vid uint64
-		v *Volume
+		v *volume.Volume
 	)
 	if r.Method != "POST" {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -178,7 +179,7 @@ func (s *Store) AddVolume(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("strconv.ParseInt(\"%s\") error(%v)", r.FormValue("vid"), err), http.StatusBadRequest)
 		return
 	}
-	if v, err = NewVolume(vid, s.StoreDir); err != nil {
+	if v, err = volume.NewVolume(vid, s.StoreDir); err != nil {
 		http.Error(w, fmt.Sprintf("create new volume for vid %s in dir %s error(%v)", r.FormValue("vid"), s.StoreDir,err),
 			http.StatusInternalServerError)
 		return

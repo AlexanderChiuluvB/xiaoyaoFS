@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/master"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/config"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
 	"os/signal"
@@ -30,7 +31,7 @@ func main() {
 }
 
 func startStorageServer(configFile string) {
-	c, err := storage.NewConfig(configFile)
+	c, err := config.NewConfig(configFile)
 	if err != nil {
 		panic(fmt.Errorf("NewConfig(\"%s\") error(%v)", configFile, err))
 	}
@@ -55,7 +56,7 @@ func startStorageServer(configFile string) {
 }
 
 func startMaster(configFile string) {
-	c, err := storage.NewConfig(configFile)
+	c, err := config.NewConfig(configFile)
 	if err != nil {
 		panic(fmt.Errorf("NewConfig(\"%s\") error(%v)", configFile, err))
 	}

@@ -1,8 +1,11 @@
 package storage
 
+
 import (
 	"bytes"
 	"fmt"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/master"
+	config2 "github.com/AlexanderChiuluvB/xiaoyaoFS/utils/config"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
@@ -15,7 +18,7 @@ import (
 func TestStorageAPI(t *testing.T) {
 
 	var (
-		config *Config
+		config *config2.Config
 		store *Store
 		body []byte
 		resp *http.Response
@@ -23,25 +26,30 @@ func TestStorageAPI(t *testing.T) {
 		err error
 	)
 
-	config, err = NewConfig("./store.toml")
+	config, err = config2.NewConfig("../store1.toml")
 	assert.NoError(t, err)
+
+	m, err := master.NewMaster(config)
+	assert.NoError(t, err)
+
+	go m.Start()
 
 	store, err = NewStore(config)
 	assert.NoError(t, err)
-	assert.Equal(t,  "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/storeDir", store.StoreDir)
+	assert.Equal(t,  "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/storeDir1", store.StoreDir)
 	defer store.Close()
 
 	go store.Start()
 
 	buf.Reset()
 	//TODO 增加删除Volume的接口
-	/*resp, err = http.Post("http://localhost:7900/add_volume?vid=3", "application/x-www-form-urlencoded", nil)
+	resp, err = http.Post("http://localhost:7900/add_volume?vid=3", "application/x-www-form-urlencoded", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 	defer resp.Body.Close()
 
 	body, err = ioutil.ReadAll(resp.Body)
-	assert.NoError(t, err)*/
+	assert.NoError(t, err)
 
 	//put file
 	file, err := os.Open("../test/logo.png")

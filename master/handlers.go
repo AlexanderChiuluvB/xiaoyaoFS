@@ -3,13 +3,14 @@ package master
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/uuid"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 )
 
 type Size interface {
@@ -17,7 +18,11 @@ type Size interface {
 }
 
 func (m *Master) getFile(w http.ResponseWriter, r *http.Request) {
-	vid, fid, err := m.Metadata.Get(r.URL.Path)
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	vid, fid, err := m.Metadata.Get(r.FormValue("filepath"))
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -43,19 +48,18 @@ func (m *Master) getFile(w http.ResponseWriter, r *http.Request) {
 
 
 func (m *Master) uploadFile(w http.ResponseWriter, r *http.Request) {
-	file, header, err := r.FormFile("file")
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	file, _, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, "r.FromFile: " + err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer file.Close()
 
-	var dst string
-	if r.URL.Path[len(r.URL.Path) - 1] == '/' {
-		dst = r.URL.Path + filepath.Base(header.Filename)
-	} else {
-		dst = r.URL.Path
-	}
+	dst := r.FormValue("filepath")
 	fileName := filepath.Base(dst)
 
 	var fileSize int64
@@ -77,12 +81,12 @@ func (m *Master) uploadFile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ioutil.Readall " + err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fid := storage.UniqueId()
+	fid := uuid.UniqueId()
 	wg := sync.WaitGroup{}
 	var uploadErr []error
 	for _, vStatus := range writableVolumeStatusList {
 		wg.Add(1)
-		go func(vs *storage.VolumeStatus) {
+		go func(vs *VolumeStatus) {
 			defer wg.Done()
 			//给该vid对应的所有volume上传文件
 			err = vs.UploadFile(fid, &data, fileName)
@@ -116,7 +120,12 @@ func (m *Master) uploadFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Master) deleteFile(w http.ResponseWriter, r *http.Request) {
-	vid, fid, err := m.Metadata.Get(r.URL.Path)
+	if r.Method != http.MethodDelete {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	filePath := r.FormValue("filepath")
+	vid, fid, err := m.Metadata.Get(filePath)
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -135,7 +144,7 @@ func (m *Master) deleteFile(w http.ResponseWriter, r *http.Request) {
 	var deleteErr []error
 	for _, vStatus := range vStatusList {
 		wg.Add(1)
-		go func(vStatus *storage.VolumeStatus) {
+		go func(vStatus *VolumeStatus) {
 			e := vStatus.Delete(fid)
 			if e != nil {
 				deleteErr = append(
@@ -148,9 +157,9 @@ func (m *Master) deleteFile(w http.ResponseWriter, r *http.Request) {
 	}
 	wg.Wait()
 
-	err = m.Metadata.Delete(r.URL.Path)
+	err = m.Metadata.Delete(filePath)
 	if err != nil {
-		deleteErr = append(deleteErr, fmt.Errorf("m.Metadata.Delete(%s) %s", r.URL.Path, err.Error()))
+		deleteErr = append(deleteErr, fmt.Errorf("m.Metadata.Delete(%s) %s", r.FormValue("filepath"), err.Error()))
 	}
 
 	if len(deleteErr) == 0 {
@@ -173,7 +182,8 @@ func (m *Master) heartbeat(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ioutil.Readall " + err.Error(), http.StatusInternalServerError)
 		return
 	}
-	newStorageStatus := new(storage.StorageStatus)
+	newStorageStatus := new(StorageStatus)
+	newStorageStatus.LastHeartbeat = time.Now()
 	err = json.Unmarshal(body, newStorageStatus)
 	if err != nil {
 		http.Error(w, "json.Unmarshal " + err.Error(), http.StatusInternalServerError)

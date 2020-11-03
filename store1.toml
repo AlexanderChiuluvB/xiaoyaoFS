@@ -1,0 +1,9 @@
+StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/storeDir1"
+
+StoreApiHost = "localhost"
+StoreApiPort = 7900
+
+MasterHost = "localhost"
+MasterPort = 8888
+
+HbaseHost = "localhost"

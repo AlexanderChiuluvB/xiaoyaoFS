@@ -1,4 +1,4 @@
-package storage
+package volume
 
 import (
 	"encoding/binary"
@@ -49,7 +49,7 @@ func NewVolume(vid uint64, dir string) (v *Volume, err error) {
 	//defer v.Directory.Close()
 	v.lock = sync.Mutex{}
 	v.MaxSize = MaxVolumeSize
-
+	v.Writeable = true
 	//每一次Volume重启,都需要读取其第一个byte以获得当前的offset
 	var oldOffsetBytes = make([]byte, VolumeIndexSize)
 	_, err = v.File.ReadAt(oldOffsetBytes, 0)
@@ -184,9 +184,5 @@ func (v *Volume) GetVolumeSize() uint64 {
 	return uint64(fi.Size())
 }
 
-func UniqueId() (id uint64) {
-	//TODO 分布式唯一自增id snowflake
-	return uint64(time.Now().UnixNano())
-}
 
 

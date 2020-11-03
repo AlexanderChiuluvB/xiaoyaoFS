@@ -1,10 +1,9 @@
-package storage
+package master
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage/api"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
@@ -31,7 +30,7 @@ func (vs *VolumeStatus) IsWritable(size uint64) bool {
 }
 
 func (vs *VolumeStatus) Delete(fid uint64) error {
-	return api.Delete(vs.StoreStatus.ApiHost, vs.StoreStatus.ApiPort, vs.VolumeId, fid)
+	return Delete(vs.StoreStatus.ApiHost, vs.StoreStatus.ApiPort, vs.VolumeId, fid)
 }
 
 func (vs *VolumeStatus) UploadFile(fid uint64, data *[]byte, fileName string) error {

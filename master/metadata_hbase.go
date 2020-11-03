@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/config"
 	"github.com/tsuna/gohbase"
 	"github.com/tsuna/gohbase/hrpc"
 	"strconv"
@@ -16,10 +16,27 @@ type HbaseStore struct {
 	adminClient gohbase.AdminClient
 }
 
-func NewHbaseStore(config *storage.Config) (store *HbaseStore, err error) {
+func NewHbaseStore(config *config.Config) (store *HbaseStore, err error) {
 	store = new(HbaseStore)
 	store.client = gohbase.NewClient(config.HbaseHost)
 	store.adminClient = gohbase.NewAdminClient(config.HbaseHost)
+
+
+	//delete
+	dit := hrpc.NewDisableTable(context.Background(), []byte("filemeta"))
+	err = store.adminClient.DisableTable(dit)
+	if err != nil {
+		if !strings.Contains(err.Error(), "TableNotEnabledException") {
+			panic(err)
+		}
+	}
+
+	det := hrpc.NewDeleteTable(context.Background(), []byte("filemeta"))
+	err = store.adminClient.DeleteTable(det)
+	if err != nil {
+		panic(err)
+	}
+
 	cFamilies := map[string]map[string]string{
 		"cf": nil,
 	}
@@ -35,29 +52,29 @@ func (store *HbaseStore) Get(filePath string) (vid uint64, fid uint64, err error
 	families := map[string][]string{"cf": nil}
 	getRequest, err := hrpc.NewGetStr(context.Background(), "filemeta", filePath, hrpc.Families(families))
 	if err != nil {
-		return -1, -1, err
+		return 0, 0, err
 	}
 	getResp, err := store.client.Get(getRequest)
 	if err != nil {
-		return -1, -1, err
+		return 0, 0, err
 	}
 	if len(getResp.Cells) == 0 {
-		return -1, -1, err
+		return 0, 0, err
 	}
 	value := getResp.Cells[0].Value
 	var valueInStr string
  	err = json.Unmarshal(value, &valueInStr)
 	if err != nil {
-		return -1, -1, err
+		return 0, 0, err
 	}
 	parts := strings.Split(valueInStr, "/")
 	vid, err = strconv.ParseUint(parts[0], 10, 64)
 	if err != nil {
-		return -1, -1, err
+		return 0, 0, err
 	}
 	fid, err = strconv.ParseUint(parts[1], 10, 64)
 	if err != nil {
-		return -1, -1, err
+		return 0, 0, err
 	}
 	return vid, fid, nil
 }

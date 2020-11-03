@@ -3,7 +3,8 @@ package master
 import (
 	"errors"
 	"fmt"
-	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/config"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/uuid"
 	"net/http"
 	"sync"
 )
@@ -13,16 +14,16 @@ type Master struct {
 	MasterHost string
 	MasterPort int
 
-	StorageStatusList []*storage.StorageStatus
+	StorageStatusList []*StorageStatus
 
 
 	// key: volume id  value: volume status List
-	VolumeStatusListMap map[uint64][]*storage.VolumeStatus
+	VolumeStatusListMap map[uint64][]*VolumeStatus
 	MapMutex sync.RWMutex
 	Metadata metadata
 }
 
-func NewMaster(config *storage.Config) (*Master, error){
+func NewMaster(config *config.Config) (*Master, error){
 	m := new(Master)
 	if config.MasterPort == 0 {
 		m.MasterPort = 8888
@@ -36,8 +37,8 @@ func NewMaster(config *storage.Config) (*Master, error){
 		m.MasterHost = config.MasterHost
 	}
 
-	m.StorageStatusList = make([]*storage.StorageStatus, 0, 1)
-	m.VolumeStatusListMap = make(map[uint64][]*storage.VolumeStatus)
+	m.StorageStatusList = make([]*StorageStatus, 0, 1)
+	m.VolumeStatusListMap = make(map[uint64][]*VolumeStatus)
 
 	m.MasterServer = http.NewServeMux()
 	m.MasterServer.HandleFunc("/getFile", m.getFile)
@@ -60,7 +61,7 @@ func (m *Master) Close() {
 	m.Metadata.Close()
 }
 
-func (m *Master) getWritableVolumes(size uint64) ([]*storage.VolumeStatus, error) {
+func (m *Master) getWritableVolumes(size uint64) ([]*VolumeStatus, error) {
 	m.MapMutex.RLock()
 	defer m.MapMutex.RUnlock()
 
@@ -72,7 +73,7 @@ func (m *Master) getWritableVolumes(size uint64) ([]*storage.VolumeStatus, error
 	return nil, errors.New("can't find writable volumes")
 }
 
-func (m *Master) isValidVolumes(vStatusList []*storage.VolumeStatus, size uint64) (bool) {
+func (m *Master) isValidVolumes(vStatusList []*VolumeStatus, size uint64) bool {
 	for _, vs := range vStatusList {
 		if !vs.StoreStatus.IsAlive() {
 			return false
@@ -88,7 +89,7 @@ func (m *Master) isValidVolumes(vStatusList []*storage.VolumeStatus, size uint64
 }
 
 //给所有的storage server创建新的volume
-func (m *Master) createNewVolume(status *storage.StorageStatus) error {
+func (m *Master) createNewVolume(status *StorageStatus) error {
 	if !status.IsAlive() {
 		return fmt.Errorf("%s:%d is dead", status.ApiHost, status.ApiPort)
 	}
@@ -98,7 +99,7 @@ func (m *Master) createNewVolume(status *storage.StorageStatus) error {
 		return err
 	}
 
-	vid := storage.UniqueId()
+	vid := uuid.UniqueId()
 	for _, status := range storageStatusList {
 		err := status.CreateVolume(vid)
 		if err != nil {
@@ -106,7 +107,7 @@ func (m *Master) createNewVolume(status *storage.StorageStatus) error {
 		}
 	}
 	//构造vstatusListMap[vid] = vStatusList
-	vStatusList := make([]*storage.VolumeStatus, 0, len(storageStatusList))
+	vStatusList := make([]*VolumeStatus, 0, len(storageStatusList))
 	for _, storageStatus := range storageStatusList {
 		for _, volumeStatus := range storageStatus.VStatusList {
 			if volumeStatus.VolumeId == vid {
@@ -123,7 +124,7 @@ func (m *Master) createNewVolume(status *storage.StorageStatus) error {
 
 }
 
-func (m *Master) needCreateVolume(status *storage.StorageStatus) bool {
+func (m *Master) needCreateVolume(status *StorageStatus) bool {
 	m.MapMutex.RLock()
 	defer m.MapMutex.RUnlock()
 
@@ -137,7 +138,7 @@ func (m *Master) needCreateVolume(status *storage.StorageStatus) bool {
 	return need && status.CanCreateVolume
 }
 
-func (m *Master) updateStorageStatus(newStatus *storage.StorageStatus) {
+func (m *Master) updateStorageStatus(newStatus *StorageStatus) {
 	m.MapMutex.RLock()
 	defer m.MapMutex.RUnlock()
 
@@ -172,7 +173,7 @@ func (m *Master) updateStorageStatus(newStatus *storage.StorageStatus) {
 		vs.StoreStatus = newStatus
 		vsList := m.VolumeStatusListMap[vs.VolumeId]
 		if vsList == nil {
-			vsList = []*storage.VolumeStatus{vs}
+			vsList = []*VolumeStatus{vs}
 		} else {
 			vsList = append(vsList, vs)
 		}
@@ -180,11 +181,11 @@ func (m *Master) updateStorageStatus(newStatus *storage.StorageStatus) {
 	}
 }
 
-func (m *Master) getStorageStatusList(newStatus *storage.StorageStatus) ([]*storage.StorageStatus, error) {
+func (m *Master) getStorageStatusList(newStatus *StorageStatus) ([]*StorageStatus, error) {
 	m.MapMutex.RLock()
 	defer m.MapMutex.RUnlock()
 
-	resultStorageStatusList := []*storage.StorageStatus{newStatus}
+	resultStorageStatusList := []*StorageStatus{newStatus}
 	for _, status := range m.StorageStatusList {
 		resultStorageStatusList = append(resultStorageStatusList, status)
 	}
