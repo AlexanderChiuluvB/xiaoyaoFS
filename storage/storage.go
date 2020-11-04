@@ -122,7 +122,6 @@ func (store *Store) Close() {
 	}
 }
 
-
 func (store *Store) HeartBeat() {
 	//TODO heartbeat with zookeeper
 	

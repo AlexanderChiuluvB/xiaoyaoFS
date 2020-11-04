@@ -163,7 +163,7 @@ func (m *Master) deleteFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(deleteErr) == 0 {
-		w.WriteHeader(http.StatusAccepted)
+		w.WriteHeader(http.StatusOK)
 	} else {
 		errStr := ""
 		for _, err := range deleteErr {

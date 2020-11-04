@@ -27,7 +27,6 @@ func TestMasterAPI(t *testing.T) {
 		err error
 	)
 
-
 	config1, err = config.NewConfig("../store1.toml")
 	assert.NoError(t, err)
 
@@ -88,6 +87,41 @@ func TestMasterAPI(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, len(expectedFileByte), len(body))
 	assert.Equal(t, expectedFileByte, body)
+
+	//make sure the file we get From both storage is the same
+
+	vid, fid, err := m.Metadata.Get(file.Name())
+	assert.NoError(t, err)
+
+	resp, err = http.Get(fmt.Sprintf("http://%s:%d/get?vid=%d&fid=%d", store1.ApiHost,
+		store1.ApiPort, vid, fid))
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	body, err = ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	assert.Equal(t, len(expectedFileByte), len(body))
+	assert.Equal(t, expectedFileByte, body)
+
+	resp, err = http.Get(fmt.Sprintf("http://%s:%d/get?vid=%d&fid=%d", store2.ApiHost,
+		store2.ApiPort, vid, fid))
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	body, err = ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	assert.Equal(t, len(expectedFileByte), len(body))
+	assert.Equal(t, expectedFileByte, body)
+
+	req, err = http.NewRequest(http.MethodDelete, fmt.Sprintf("http://%s:%d/deleteFile?filepath=%s",
+		m.MasterHost, m.MasterPort, file.Name()), nil)
+	assert.NoError(t, err)
+	resp, err = http.DefaultClient.Do(req)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	resp, err = http.Get(fmt.Sprintf("http://%s:%d/getFile?filepath=%s", m.MasterHost,
+		m.MasterPort, file.Name()))
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 
 
 }
