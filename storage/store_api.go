@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage/volume"
+	"io"
 	"io/ioutil"
 	"mime"
 	"net/http"
@@ -62,20 +63,14 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotModified)
 	} else {
 		//TODO: io.Copy
-		var needleData []byte
 		_, err := n.File.Seek(int64(n.NeedleOffset +volume.FixedNeedleSize+ uint64(len(n.FileName)) + n.CurrentOffset),0)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("file seek error %v", err), http.StatusInternalServerError)
 			return
 		}
-		needleData, err = ioutil.ReadAll(n.File)
+		_, err = io.CopyN(w, n.File, int64(n.FileSize))
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Read Needle data error %v", err), http.StatusInternalServerError)
-			return
-		}
-		_, err = w.Write(needleData)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("write to http.writer error %v", err), http.StatusInternalServerError)
 			return
 		}
 	}
