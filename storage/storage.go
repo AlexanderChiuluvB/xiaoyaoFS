@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/master"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/master/api"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage/volume"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/config"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/disk"
@@ -159,7 +160,7 @@ func (store *Store) HeartBeat() {
 			ss.VStatusList = append(ss.VStatusList, volumeStatus)
 		}
 
-		err := master.Heartbeat(store.MasterHost, store.MasterPort, ss)
+		err := api.Heartbeat(store.MasterHost, store.MasterPort, ss)
 		if err != nil {
 			panic(err)
 		}

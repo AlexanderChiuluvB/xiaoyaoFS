@@ -1,14 +1,15 @@
-package master
+package api
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/master"
 	"io/ioutil"
 	"net/http"
 )
 
-func Heartbeat(host string, port int, ss *StorageStatus) error {
+func Heartbeat(host string, port int, ss *master.StorageStatus) error {
 	url := fmt.Sprintf("http://%s:%d/heartbeat", host, port)
 	body, err := json.Marshal(ss)
 	reader := bytes.NewReader(body)

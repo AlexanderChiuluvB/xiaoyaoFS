@@ -3,7 +3,7 @@ module github.com/AlexanderChiuluvB/xiaoyaoFS
 go 1.15
 
 require (
-	github.com/AlexanderChiuluvB/bfs v2.1.0+incompatible
+	bazil.org/fuse v0.0.0-20200524192727-fb710f7dfd05
 	github.com/BurntSushi/toml v0.3.1
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
@@ -13,7 +13,6 @@ require (
 	golang.org/x/sys v0.0.0-20201018230417-eeed37f84f13 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
-	gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405
 	modernc.org/mathutil v1.1.1 // indirect
 	modernc.org/strutil v1.1.0 // indirect
 )

@@ -16,6 +16,8 @@ type Config struct {
 	MasterPort int
 
 	HbaseHost string
+
+	MountDir string
 }
 
 // NewConfig new a config.
