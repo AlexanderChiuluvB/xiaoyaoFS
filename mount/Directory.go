@@ -1,9 +1,11 @@
 package mount
 
 import (
-	"bazil.org/fuse"
-	"bazil.org/fuse/fs"
+	"bytes"
 	"context"
+	"github.com/seaweedfs/fuse"
+	"github.com/seaweedfs/fuse/fs"
+	"strings"
 )
 
 type Dir struct {
@@ -11,6 +13,30 @@ type Dir struct {
 	XiaoyaoFs *XiaoyaoFs
 	parent *Dir
 	//todo entry
+}
+
+func (dir *Dir) FullPath() string {
+	var parts []string
+	for p := dir; p != nil; p = p.parent {
+		if strings.HasPrefix(p.Name, "/") {
+			if len(p.Name) > 1 {
+				parts = append(parts, p.Name[1:])
+			}
+		} else {
+			parts = append(parts, p.Name)
+		}
+	}
+
+	if len(parts) == 0 {
+		return "/"
+	}
+
+	var buf bytes.Buffer
+	for i := len(parts) - 1; i >= 0; i-- {
+		buf.WriteString("/")
+		buf.WriteString(parts[i])
+	}
+	return buf.String()
 }
 
 func (d *Dir) Rename(ctx context.Context, req *fuse.RenameRequest, newDir fs.Node) error {
@@ -26,7 +52,8 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 }
 
 func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error) {
-	panic("implement me")
+	return nil, nil
+	//TODO 参考seaweadFS增加一层fsNode的缓存
 }
 
 func (d *Dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
@@ -39,6 +66,14 @@ func (d *Dir) Lookup(ctx context.Context, req *fuse.LookupRequest, resp *fuse.Lo
 
 func (d *Dir) Attr(ctx context.Context, attr *fuse.Attr) error {
 	panic("implement me")
+}
+
+func (d *Dir) newFile(name string) fs.Node {
+	return &File{
+		Name:           name,
+		Dir:            d,
+		XiaoyaoFs:      d.XiaoyaoFs,
+	}
 }
 
 var _ fs.Node = (*Dir)(nil)

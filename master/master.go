@@ -42,6 +42,7 @@ func NewMaster(config *config.Config) (*Master, error){
 
 	m.MasterServer = http.NewServeMux()
 	m.MasterServer.HandleFunc("/getFile", m.getFile)
+	m.MasterServer.HandleFunc("/getNeedle", m.getNeedle)
 	m.MasterServer.HandleFunc("/uploadFile", m.uploadFile)
 	m.MasterServer.HandleFunc("/deleteFile", m.deleteFile)
 	m.MasterServer.HandleFunc("/heartbeat", m.heartbeat)

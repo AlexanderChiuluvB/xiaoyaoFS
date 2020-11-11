@@ -12,6 +12,9 @@ import (
 func Heartbeat(host string, port int, ss *master.StorageStatus) error {
 	url := fmt.Sprintf("http://%s:%d/heartbeat", host, port)
 	body, err := json.Marshal(ss)
+	if err != nil {
+		return err
+	}
 	reader := bytes.NewReader(body)
 	resp, err := http.Post(url, "application/json", reader)
 	if err != nil {

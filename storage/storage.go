@@ -102,6 +102,7 @@ func NewStore(config *config.Config) (*Store, error) {
 
 	store.ApiServer.HandleFunc("/add_volume", store.AddVolume)
 	store.ApiServer.HandleFunc("/get", store.Get)
+	store.ApiServer.HandleFunc("/getNeedle", store.GetNeedle)
 	store.ApiServer.HandleFunc("/put", store.Put)
 	store.ApiServer.HandleFunc("/del", store.Del)
 
@@ -124,8 +125,7 @@ func (store *Store) Close() {
 }
 
 func (store *Store) HeartBeat() {
-	//TODO heartbeat with zookeeper
-	
+
 	tick := time.NewTicker(HeartBeatInterval)
 	defer tick.Stop()
 

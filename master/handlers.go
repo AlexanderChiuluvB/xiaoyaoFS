@@ -46,6 +46,35 @@ func (m *Master) getFile(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "all volumes is dead", http.StatusInternalServerError)
 }
 
+func (m *Master) getNeedle(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	vid, fid, err := m.Metadata.Get(r.FormValue("filepath"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	m.MapMutex.RLock()
+	vStatusList, ok := m.VolumeStatusListMap[vid]
+	m.MapMutex.RUnlock()
+	if !ok {
+		http.Error(w, fmt.Sprintf("Cant find volume %d", vid), http.StatusNotFound)
+		return
+	}
+	length := len(vStatusList)
+	for i:=0; i < length; i++ {
+		vStatus := vStatusList[i]
+		if vStatus.StoreStatus.IsAlive() {
+			http.Redirect(w, r, vStatus.GetNeedleUrl(fid), http.StatusFound)
+			return
+		}
+	}
+
+	http.Error(w, "all volumes is dead", http.StatusInternalServerError)
+}
+
 
 func (m *Master) uploadFile(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {

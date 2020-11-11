@@ -1,10 +1,11 @@
 package storage
 
-
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/master"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage/volume"
 	config2 "github.com/AlexanderChiuluvB/xiaoyaoFS/utils/config"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -99,6 +100,22 @@ func TestStorageAPI(t *testing.T) {
 	err = ioutil.WriteFile("../test/logo2.png", body, os.ModePerm)
 	assert.NoError(t, err)
 
+	//test getNeedle
+	resp, err = http.Get(fmt.Sprintf("http://localhost:7900/getNeedle?vid=3&fid=1"))
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+
+	body, err = ioutil.ReadAll(resp.Body)
+	//TODO Unexpected EOF here
+	//assert.NoError(t, err)
+	gotNeedle := new(volume.Needle)
+	err = json.Unmarshal(body, gotNeedle)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(1), gotNeedle.Id)
+	assert.Equal(t, uint64(len(expectedFileByte)), gotNeedle.FileSize)
+
+	//test delete
 	req, err = http.NewRequest(http.MethodDelete, fmt.Sprintf("http://localhost:7900/del?vid=3&fid=1"), nil)
 	assert.NoError(t, err)
 

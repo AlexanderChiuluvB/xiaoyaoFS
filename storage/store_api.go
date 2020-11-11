@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage/volume"
 	"io"
@@ -75,6 +77,67 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+}
+
+func (s *Store) GetNeedle(w http.ResponseWriter, r *http.Request){
+	var (
+		err              error
+		vid uint64
+		fid uint64
+	)
+	if r.Method != "GET" {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if vid, err = strconv.ParseUint(r.FormValue("vid"), 10, 64); err != nil {
+		http.Error(w, fmt.Sprintf("strconv.ParseInt(\"%s\") error(%v)", r.FormValue("vid"), err), http.StatusBadRequest)
+		return
+	}
+
+	v := s.Volumes[vid]
+	if v == nil {
+		http.Error(w, "can't find volume", http.StatusNotFound)
+		return
+	}
+
+	if fid, err = strconv.ParseUint(r.FormValue("fid"), 10, 64); err != nil {
+		http.Error(w, fmt.Sprintf("strconv.ParseInt(\"%s\") error(%v)", r.FormValue("fid"), err), http.StatusBadRequest)
+		return
+	}
+
+	n, err := v.GetNeedle(fid)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Get Needle of fid %d of volume vid %d error %v", fid, vid, err), http.StatusBadRequest)
+		return
+	}
+
+	needleBytes, err := json.Marshal(n)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("marshal needle data of fid %d of volume vid %d error %v", fid, vid, err), http.StatusBadRequest)
+	}
+
+	reader := bytes.NewReader(needleBytes)
+	w.Header().Set("Content-Type", get_content_type(n.FileName))
+	w.Header().Set("Accept-Ranges", "bytes")
+	w.Header().Set("ETag", fmt.Sprintf("%d", fid))
+	w.Header().Set("Content-Length", strconv.FormatUint(n.FileSize, 10))
+	etagMatch := false
+	if r.Header.Get("If-None-Match") != "" {
+		s := r.Header.Get("If-None-Match")
+		if etag, err := strconv.ParseUint(s[1:len(s) - 1], 10, 64); err == nil && etag == fid {
+			etagMatch = true
+		}
+	}
+	if etagMatch {
+		w.WriteHeader(http.StatusNotModified)
+	} else {
+		_, err = reader.WriteTo(w)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Read Needle data error %v", err), http.StatusInternalServerError)
+			return
+		}
+	}
 }
 
 func (s *Store) Put(w http.ResponseWriter, r *http.Request) {
