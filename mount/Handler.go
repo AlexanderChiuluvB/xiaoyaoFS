@@ -44,7 +44,20 @@ func (fh *FileHandle) Write(ctx context.Context, req *fuse.WriteRequest, resp *f
 }
 
 func (fh *FileHandle) Release(ctx context.Context, req *fuse.ReleaseRequest) error{
-	panic("implement me")
+	fh.Lock()
+	defer fh.Unlock()
+
+	fh.F.isOpen--
+
+	if fh.F.isOpen < 0 {
+		fh.F.isOpen = 0
+		return nil
+	}
+
+	if fh.F.isOpen == 0 {
+		fh.F.XiaoyaoFs.ReleaseHandle(fh.F.fullpath(), fuse.HandleID(fh.Handle))
+	}
+	return nil
 }
 
 func (fh *FileHandle) Read(ctx context.Context, req *fuse.ReadRequest, resp *fuse.ReadResponse) error {

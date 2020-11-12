@@ -10,12 +10,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
-	"time"
 )
 
 var (
-	OS_UID = uint32(os.Getuid())
-	OS_GID = uint32(os.Getgid())
 	DefaultDir      string = "/tmp/fs"
 	MaxVolumeSize   uint64 = 1 << 36 //64GB
 	VolumeIndexSize uint64 = 8       //每个Volume File用1byte来存储当前的offset的偏移量
@@ -141,14 +138,14 @@ func (v *Volume) NewNeedle(id uint64, fileName string, fileSize uint64) (n *Need
 	n.Id = id
 	n.NeedleOffset = offset // needle 在 volume 的初始偏移量
 	n.FileSize = fileSize
-	now := time.Now()
-	n.Uid = OS_UID
-	n.Gid = OS_GID
-	n.Mtime = now
-	n.Ctime = now
+	//now := time.Now()
+	//n.Uid = OS_UID
+	//n.Gid = OS_GID
+	//n.Mtime = now
+	//n.Ctime = now
 	n.File = v.File
 	n.FileName = fileName
-	n.Mode = uint32(os.ModePerm)
+	//n.Mode = uint32(os.ModePerm)
 	// 到这里初始化了一个新的 Needle
 
 	// 然后把Needle的数据序列化

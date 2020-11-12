@@ -23,9 +23,9 @@ func Get(host string, port int, filePath string) ([]byte, error) {
 
 }
 
-func GetNeedle(host string, port int, filePath string) ([]byte, error) {
+func GetEntry(host string, port int, filePath string) ([]byte, error) {
 
-	resp, err := http.Get(fmt.Sprintf("http://%s:%d/getNeedle?filepath=%s", host,
+	resp, err := http.Get(fmt.Sprintf("http://%s:%d/getEntry?filepath=%s", host,
 		port, filePath))
 	if err != nil {
 		return nil, err

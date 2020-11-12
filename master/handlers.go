@@ -13,6 +13,10 @@ import (
 	"time"
 )
 
+var (
+OS_UID = uint32(os.Getuid())
+OS_GID = uint32(os.Getgid())
+)
 type Size interface {
 	Size() int64
 }
@@ -22,23 +26,24 @@ func (m *Master) getFile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	vid, fid, err := m.Metadata.Get(r.FormValue("filepath"))
+	filePath := r.FormValue("filepath")
+	entry, err := m.Metadata.Get(filePath)
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 	m.MapMutex.RLock()
-	vStatusList, ok := m.VolumeStatusListMap[vid]
+	vStatusList, ok := m.VolumeStatusListMap[entry.Vid]
 	m.MapMutex.RUnlock()
 	if !ok {
-		http.Error(w, fmt.Sprintf("Cant find volume %d", vid), http.StatusNotFound)
+		http.Error(w, fmt.Sprintf("Cant find volume %d", entry.Vid), http.StatusNotFound)
 		return
 	}
 	length := len(vStatusList)
 	for i:=0; i < length; i++ {
 		vStatus := vStatusList[i]
 		if vStatus.StoreStatus.IsAlive() {
-			http.Redirect(w, r, vStatus.GetFileUrl(fid), http.StatusFound)
+			http.Redirect(w, r, vStatus.GetFileUrl(entry.Nid), http.StatusFound)
 			return
 		}
 	}
@@ -46,28 +51,28 @@ func (m *Master) getFile(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "all volumes is dead", http.StatusInternalServerError)
 }
 
-func (m *Master) getNeedle(w http.ResponseWriter, r *http.Request) {
+func (m *Master) getEntry(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	vid, fid, err := m.Metadata.Get(r.FormValue("filepath"))
+	entry, err := m.Metadata.Get(r.FormValue("filepath"))
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 	m.MapMutex.RLock()
-	vStatusList, ok := m.VolumeStatusListMap[vid]
+	vStatusList, ok := m.VolumeStatusListMap[entry.Vid]
 	m.MapMutex.RUnlock()
 	if !ok {
-		http.Error(w, fmt.Sprintf("Cant find volume %d", vid), http.StatusNotFound)
+		http.Error(w, fmt.Sprintf("Cant find volume %d", entry.Vid), http.StatusNotFound)
 		return
 	}
 	length := len(vStatusList)
 	for i:=0; i < length; i++ {
 		vStatus := vStatusList[i]
 		if vStatus.StoreStatus.IsAlive() {
-			http.Redirect(w, r, vStatus.GetNeedleUrl(fid), http.StatusFound)
+			http.Redirect(w, r, vStatus.GetEntryUrl(entry.Nid), http.StatusFound)
 			return
 		}
 	}
@@ -88,8 +93,8 @@ func (m *Master) uploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	dst := r.FormValue("filepath")
-	fileName := filepath.Base(dst)
+	filePath := r.FormValue("filepath")
+	fileName := filepath.Base(filePath)
 
 	var fileSize int64
 	switch file.(type){
@@ -100,7 +105,7 @@ func (m *Master) uploadFile(w http.ResponseWriter, r *http.Request) {
 		fileSize = file.(Size).Size()
 	}
 
-	writableVolumeStatusList, err := m.getWritableVolumes(uint64(fileSize))
+	vid, writableVolumeStatusList, err := m.getWritableVolumes(uint64(fileSize))
 	if err != nil {
 		http.Error(w, "m.getWritableVolumes: " + err.Error(), http.StatusInternalServerError)
 		return
@@ -138,7 +143,17 @@ func (m *Master) uploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		//update meta data
-		err = m.Metadata.Set(dst, writableVolumeStatusList[0].VolumeId, fid)
+		entry := new(Entry)
+		entry.Nid = fid
+		entry.Vid = vid
+		entry.FilePath = filePath
+		entry.Ctime = time.Now()
+		entry.Mtime = time.Now()
+		entry.Mode = uint32(os.ModePerm)
+		entry.Uid = OS_UID
+		entry.Gid = OS_GID
+
+		err = m.Metadata.Set(entry)
 		if err != nil {
 			http.Error(w, "m.Metadata.Set: " + err.Error(), http.StatusInternalServerError)
 			return
@@ -154,16 +169,16 @@ func (m *Master) deleteFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	filePath := r.FormValue("filepath")
-	vid, fid, err := m.Metadata.Get(filePath)
+	entry, err := m.Metadata.Get(filePath)
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 	m.MapMutex.RLock()
-	vStatusList, ok := m.VolumeStatusListMap[vid]
+	vStatusList, ok := m.VolumeStatusListMap[entry.Vid]
 	m.MapMutex.RUnlock()
 	if !ok {
-		http.Error(w, fmt.Sprintf("Cant find volume %d", vid), http.StatusNotFound)
+		http.Error(w, fmt.Sprintf("Cant find volume %d", entry.Vid), http.StatusNotFound)
 		return
 	} else if !m.isValidVolumes(vStatusList, 0) {
 		http.Error(w, "can't delete file, because its readonly.", http.StatusNotAcceptable)
@@ -174,7 +189,7 @@ func (m *Master) deleteFile(w http.ResponseWriter, r *http.Request) {
 	for _, vStatus := range vStatusList {
 		wg.Add(1)
 		go func(vStatus *VolumeStatus) {
-			e := vStatus.Delete(fid)
+			e := vStatus.Delete(entry.Nid)
 			if e != nil {
 				deleteErr = append(
 					deleteErr,

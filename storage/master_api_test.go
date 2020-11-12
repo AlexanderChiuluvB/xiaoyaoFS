@@ -80,7 +80,6 @@ func TestMasterAPI(t *testing.T) {
 	mPart.Close()
 
 
-
 	writerBuf2 := &bytes.Buffer{}
 	mPart2 := multipart.NewWriter(writerBuf2)
 	filePart2, err := mPart2.CreateFormFile("file", "bean.png")
@@ -136,11 +135,11 @@ func TestMasterAPI(t *testing.T) {
 	assert.NoError(t, err)
 
 	//make sure the file we get From both storage is the same
-	vid1, nid1, err := m.Metadata.Get(file.Name())
+	entry, err := m.Metadata.Get(file.Name())
 	assert.NoError(t, err)
 
 	resp, err = http.Get(fmt.Sprintf("http://%s:%d/get?vid=%d&fid=%d", store1.ApiHost,
-		store1.ApiPort, vid1, nid1))
+		store1.ApiPort, entry.Vid, entry.Nid))
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	body, err = ioutil.ReadAll(resp.Body)
@@ -149,7 +148,7 @@ func TestMasterAPI(t *testing.T) {
 	assert.Equal(t, expectedFileByte, body)
 
 	resp, err = http.Get(fmt.Sprintf("http://%s:%d/get?vid=%d&fid=%d", store2.ApiHost,
-		store2.ApiPort, vid1, nid1))
+		store2.ApiPort, entry.Vid, entry.Nid))
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	body, err = ioutil.ReadAll(resp.Body)
@@ -163,11 +162,5 @@ func TestMasterAPI(t *testing.T) {
 	resp, err = http.DefaultClient.Do(req)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	resp, err = http.Get(fmt.Sprintf("http://%s:%d/getFile?filepath=%s", m.MasterHost,
-		m.MasterPort, file.Name()))
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-
 
 }

@@ -2,10 +2,9 @@ package mount
 
 import (
 	"context"
-	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage/volume"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/master"
 	"github.com/seaweedfs/fuse"
 	"github.com/seaweedfs/fuse/fs"
-	"os"
 	"strings"
 	"time"
 )
@@ -18,7 +17,7 @@ type File struct {
 	XiaoyaoFs *XiaoyaoFs
 	Dir *Dir
 	isOpen int
-	Needle *volume.Needle
+	Entry *master.Entry
 }
 
 func (f *File) fullpath() string {
@@ -41,12 +40,6 @@ func (f *File) Open(ctx context.Context, req *fuse.OpenRequest, resp *fuse.OpenR
 func (f *File) Attr(ctx context.Context, attr *fuse.Attr) error {
 	attr.Inode = AsInode(f.fullpath())
 	attr.Valid = time.Second
-	attr.Mtime = f.Needle.Mtime
-	attr.Ctime = f.Needle.Ctime
-	attr.Size = f.Needle.FileSize
-	attr.Gid = f.Needle.Gid
-	attr.Uid = f.Needle.Uid
-	attr.Mode = os.FileMode(f.Needle.Mode)
 	attr.Blocks = attr.Size/blockSize + 1
 	return nil
 }

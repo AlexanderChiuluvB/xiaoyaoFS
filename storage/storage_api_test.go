@@ -53,11 +53,11 @@ func TestStorageAPI(t *testing.T) {
 	assert.NoError(t, err)
 
 	//put file
-	file, err := os.Open("../test/logo.png")
+	file, err := os.Open("../test/bean.png")
 	assert.NoError(t, err)
 	defer file.Close()
 
-	file2, err := os.Open("../test/logo.png")
+	file2, err := os.Open("../test/bean.png")
 	assert.NoError(t, err)
 	defer file2.Close()
 	expectedFileByte, err := ioutil.ReadAll(file2)

@@ -6,7 +6,6 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 	"os"
 	"testing"
-	"time"
 	"unsafe"
 )
 
@@ -33,14 +32,14 @@ func TestLeveldbDirectory(t *testing.T) {
 		t.Log("DELETE:", iter.Key())
 		d.db.Delete(iter.Key(), nil)
 	}
-	now := time.Now()
+	//now := time.Now()
 	var id uint64 = 3
 	n := &Needle{
 		Id:        id,
 		FileSize:      20,
 		NeedleOffset:    60,
-		Ctime: now,
-		Mtime: now,
+		//Ctime: now,
+		//Mtime: now,
 		FileName: "test-file",
 	}
 	fmt.Println(unsafe.Sizeof(*n))

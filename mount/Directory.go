@@ -3,8 +3,10 @@ package mount
 import (
 	"bytes"
 	"context"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/master"
 	"github.com/seaweedfs/fuse"
 	"github.com/seaweedfs/fuse/fs"
+	"os"
 	"strings"
 )
 
@@ -12,7 +14,8 @@ type Dir struct {
 	Name string
 	XiaoyaoFs *XiaoyaoFs
 	parent *Dir
-	//todo entry
+	Entry *master.Entry
+
 }
 
 func (dir *Dir) FullPath() string {
@@ -48,7 +51,16 @@ func (d *Dir) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 }
 
 func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.CreateResponse) (fs.Node, fs.Handle, error) {
-	panic("implement me")
+
+	isDirectory := req.Mode & os.ModeDir > 0
+	if isDirectory {
+		// create directory
+
+	} else {
+		// create file
+
+	}
+	return nil,nil,nil
 }
 
 func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error) {

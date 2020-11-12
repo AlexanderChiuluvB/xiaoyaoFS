@@ -42,7 +42,7 @@ func NewMaster(config *config.Config) (*Master, error){
 
 	m.MasterServer = http.NewServeMux()
 	m.MasterServer.HandleFunc("/getFile", m.getFile)
-	m.MasterServer.HandleFunc("/getNeedle", m.getNeedle)
+	m.MasterServer.HandleFunc("/getEntry", m.getEntry)
 	m.MasterServer.HandleFunc("/uploadFile", m.uploadFile)
 	m.MasterServer.HandleFunc("/deleteFile", m.deleteFile)
 	m.MasterServer.HandleFunc("/heartbeat", m.heartbeat)
@@ -62,16 +62,16 @@ func (m *Master) Close() {
 	m.Metadata.Close()
 }
 
-func (m *Master) getWritableVolumes(size uint64) ([]*VolumeStatus, error) {
+func (m *Master) getWritableVolumes(size uint64) (uint64, []*VolumeStatus, error) {
 	m.MapMutex.RLock()
 	defer m.MapMutex.RUnlock()
 
-	for _, vStatusList := range m.VolumeStatusListMap {
+	for vid, vStatusList := range m.VolumeStatusListMap {
 		if m.isValidVolumes(vStatusList, size){
-			return vStatusList, nil
+			return vid, vStatusList, nil
 		}
 	}
-	return nil, errors.New("can't find writable volumes")
+	return 0, nil, errors.New("can't find writable volumes")
 }
 
 func (m *Master) isValidVolumes(vStatusList []*VolumeStatus, size uint64) bool {
@@ -161,7 +161,9 @@ func (m *Master) updateStorageStatus(newStatus *StorageStatus) {
 						break
 					}
 				}
+				m.MapMutex.Lock()
 				m.VolumeStatusListMap[vs.VolumeId] = vsList
+				m.MapMutex.Unlock()
 			}
 			break
 		}

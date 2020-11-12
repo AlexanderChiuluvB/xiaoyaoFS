@@ -25,8 +25,8 @@ func (vs *VolumeStatus) GetFileUrl(fid uint64) string {
 		vs.VolumeId, fid)
 }
 
-func (vs *VolumeStatus) GetNeedleUrl(fid uint64) string {
-	return fmt.Sprintf("http://%s:%d/getNeedle?vid=%d&fid=%d", vs.StoreStatus.ApiHost, vs.StoreStatus.ApiPort,
+func (vs *VolumeStatus) GetEntryUrl(fid uint64) string {
+	return fmt.Sprintf("http://%s:%d/getEntry?vid=%d&fid=%d", vs.StoreStatus.ApiHost, vs.StoreStatus.ApiPort,
 		vs.VolumeId, fid)
 }
 

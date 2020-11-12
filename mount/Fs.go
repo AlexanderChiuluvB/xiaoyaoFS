@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/master/api"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/config"
+	"github.com/seaweedfs/fuse"
 	"github.com/seaweedfs/fuse/fs"
 	"io"
 	"sync"
@@ -45,11 +46,11 @@ func (x *XiaoyaoFs) AcquireHandle(file *File, uid, gid uint32) (fileHandle *File
 	}
 
 	fileHandle = NewFileHandle(file, uid, gid)
-	needleBytes, err := api.GetNeedle(x.MasterHost, x.MasterPort, file.Name)
+	entryBytes, err := api.GetEntry(x.MasterHost, x.MasterPort, file.Name)
 	if err != nil {
 		return nil, err
 	}
-	err = json.Unmarshal(needleBytes, file.Needle)
+	err = json.Unmarshal(entryBytes, file.Entry)
 	if err != nil {
 		return nil, err
 	}
@@ -57,6 +58,12 @@ func (x *XiaoyaoFs) AcquireHandle(file *File, uid, gid uint32) (fileHandle *File
 	x.handles[inodeId] = fileHandle
 	fileHandle.Handle = inodeId
 	return
+}
+
+func (x *XiaoyaoFs) ReleaseHandle(fullpath string, id fuse.HandleID) {
+	x.handlesLock.Lock()
+	defer x.handlesLock.Unlock()
+	delete(x.handles, AsInode(fullpath))
 }
 
 func AsInode(path string) uint64 {

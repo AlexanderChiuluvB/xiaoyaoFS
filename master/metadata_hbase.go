@@ -7,7 +7,6 @@ import (
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/config"
 	"github.com/tsuna/gohbase"
 	"github.com/tsuna/gohbase/hrpc"
-	"strconv"
 	"strings"
 )
 
@@ -48,56 +47,51 @@ func NewHbaseStore(config *config.Config) (store *HbaseStore, err error) {
 	return store, nil
 }
 
-func (store *HbaseStore) Get(filePath string) (vid uint64, fid uint64, err error) {
+func (store *HbaseStore) Get(filePath string) (entry *Entry, err error) {
 	families := map[string][]string{"cf": nil}
-	getRequest, err := hrpc.NewGetStr(context.Background(), "filemeta", filePath, hrpc.Families(families))
+	key := []byte(filePath)
+	getRequest, err := hrpc.NewGetStr(context.Background(), "filemeta", string(key), hrpc.Families(families))
 	if err != nil {
-		return 0, 0, err
+		return nil, err
 	}
 	getResp, err := store.client.Get(getRequest)
 	if err != nil {
-		return 0, 0, err
+		return nil, err
 	}
 	if len(getResp.Cells) == 0 {
-		return 0, 0, err
+		return nil, err
 	}
 	value := getResp.Cells[0].Value
-	var valueInStr string
- 	err = json.Unmarshal(value, &valueInStr)
+	entry = new(Entry)
+ 	err = json.Unmarshal(value, entry)
 	if err != nil {
-		return 0, 0, err
+		return nil, err
 	}
-	parts := strings.Split(valueInStr, "/")
-	vid, err = strconv.ParseUint(parts[0], 10, 64)
-	if err != nil {
-		return 0, 0, err
-	}
-	fid, err = strconv.ParseUint(parts[1], 10, 64)
-	if err != nil {
-		return 0, 0, err
-	}
-	return vid, fid, nil
+	return entry, nil
 }
 
-func (store *HbaseStore) Set(filePath string, vid uint64, fid uint64) error {
-	value, err := json.Marshal(fmt.Sprintf("%d/%d", vid, fid))
+func (store *HbaseStore) Set(entry *Entry) error {
+	key := []byte(entry.FilePath)
+	value, err := json.Marshal(entry)
 	if err != nil {
 		return err
 	}
+
 	values := map[string]map[string][]byte{"cf": map[string][]byte{"value": value}}
-	putRequest, err := hrpc.NewPutStr(context.Background(), "filemeta", filePath, values)
+	putRequest, err := hrpc.NewPutStr(context.Background(), "filemeta", string(key), values)
 	if err != nil {
 		return fmt.Errorf("failed to create put request: %s", err)
 	}
 	_, err = store.client.Put(putRequest)
 	if err != nil {
-		return fmt.Errorf("put key %s and value %s error : %v", filePath, string(value), err)
+		return fmt.Errorf("put key %s and value %s error : %v", entry.FilePath, string(value), err)
 	}
 	return nil
 }
 
 func (store *HbaseStore) Delete(filePath string) error {
-	deleteRequest, err := hrpc.NewDelStr(context.Background(), "filemeta", filePath, map[string]map[string][]byte{
+	key := []byte(filePath)
+	deleteRequest, err := hrpc.NewDelStr(context.Background(), "filemeta", string(key), map[string]map[string][]byte{
 		"cf": nil,
 	})
 	if err != nil {
