@@ -43,7 +43,10 @@ func NewMaster(config *config.Config) (*Master, error){
 	m.MasterServer = http.NewServeMux()
 	m.MasterServer.HandleFunc("/getFile", m.getFile)
 	m.MasterServer.HandleFunc("/getEntry", m.getEntry)
+	m.MasterServer.HandleFunc("/getEntries", m.getEntries)
+	m.MasterServer.HandleFunc("/insertEntry", m.insertEntry)
 	m.MasterServer.HandleFunc("/uploadFile", m.uploadFile)
+	m.MasterServer.HandleFunc("/writeData", m.writeData)
 	m.MasterServer.HandleFunc("/deleteFile", m.deleteFile)
 	m.MasterServer.HandleFunc("/heartbeat", m.heartbeat)
 
@@ -194,5 +197,7 @@ func (m *Master) getStorageStatusList(newStatus *StorageStatus) ([]*StorageStatu
 	}
 	return resultStorageStatusList, nil
 }
+
+
 
 

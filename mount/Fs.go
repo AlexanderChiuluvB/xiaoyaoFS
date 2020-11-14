@@ -2,7 +2,6 @@ package mount
 
 import (
 	"crypto/md5"
-	"encoding/json"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/master/api"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/config"
 	"github.com/seaweedfs/fuse"
@@ -15,7 +14,7 @@ var _ fs.FS = (*XiaoyaoFs)(nil)
 
 type XiaoyaoFs struct {
 	root fs.Node
-
+	rootPath string
 	handlesLock sync.Mutex
 	handles map[uint64]*FileHandle
 
@@ -23,14 +22,16 @@ type XiaoyaoFs struct {
 	MasterPort int
 }
 
-func NewXiaoyaoFs(c *config.Config) *XiaoyaoFs{
-	xiaoyaoFs := new(XiaoyaoFs)
-	return &XiaoyaoFs{
-			root: &Dir{Name: c.MountDir,
-			XiaoyaoFs: xiaoyaoFs},
-			MasterHost: c.MasterHost,
-			MasterPort: c.MasterPort,
+func NewXiaoyaoFs(c *config.Config) *XiaoyaoFs {
+	xiaoyaoFs :=  &XiaoyaoFs{
+		handles : make(map[uint64]*FileHandle),
+		rootPath: c.MountDir,
+		MasterHost: c.MasterHost,
+		MasterPort: c.MasterPort,
 	}
+	xiaoyaoFs.root = &Dir{Name: c.MountDir,
+		XiaoyaoFs: xiaoyaoFs}
+	return xiaoyaoFs
 }
 
 func (x *XiaoyaoFs) AcquireHandle(file *File, uid, gid uint32) (fileHandle *FileHandle, err error) {
@@ -46,11 +47,7 @@ func (x *XiaoyaoFs) AcquireHandle(file *File, uid, gid uint32) (fileHandle *File
 	}
 
 	fileHandle = NewFileHandle(file, uid, gid)
-	entryBytes, err := api.GetEntry(x.MasterHost, x.MasterPort, file.Name)
-	if err != nil {
-		return nil, err
-	}
-	err = json.Unmarshal(entryBytes, file.Entry)
+	file.Entry, err = api.GetEntry(x.MasterHost, x.MasterPort, file.fullpath())
 	if err != nil {
 		return nil, err
 	}

@@ -3,8 +3,10 @@ package mount
 import (
 	"context"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/master"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/master/api"
 	"github.com/seaweedfs/fuse"
 	"github.com/seaweedfs/fuse/fs"
+	"os"
 	"strings"
 	"time"
 )
@@ -37,9 +39,20 @@ func (f *File) Open(ctx context.Context, req *fuse.OpenRequest, resp *fuse.OpenR
 	return handle, nil
 }
 
-func (f *File) Attr(ctx context.Context, attr *fuse.Attr) error {
+func (f *File) Attr(ctx context.Context, attr *fuse.Attr) (err error) {
+	if f.isOpen <= 0 {
+		f.Entry, err = api.GetEntry(f.XiaoyaoFs.MasterHost, f.XiaoyaoFs.MasterPort, f.fullpath())
+		if err != nil {
+			return err
+		}
+	}
 	attr.Inode = AsInode(f.fullpath())
 	attr.Valid = time.Second
+	attr.Gid = f.Entry.Gid
+	attr.Uid = f.Entry.Uid
+	attr.Size = f.Entry.FileSize
+	attr.Crtime = f.Entry.Ctime
+	attr.Mode = os.FileMode(f.Entry.Mode)
 	attr.Blocks = attr.Size/blockSize + 1
 	return nil
 }

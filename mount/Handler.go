@@ -40,7 +40,7 @@ func (fh *FileHandle) Write(ctx context.Context, req *fuse.WriteRequest, resp *f
 	copy(data, req.Data)
 	resp.Size = len(data)
 
-	return api.Upload(fh.F.XiaoyaoFs.MasterHost, fh.F.XiaoyaoFs.MasterPort, fh.F.Name)
+	return api.WriteData(fh.F.XiaoyaoFs.MasterHost, fh.F.XiaoyaoFs.MasterPort, fh.F.fullpath(), &data)
 }
 
 func (fh *FileHandle) Release(ctx context.Context, req *fuse.ReleaseRequest) error{
@@ -65,7 +65,8 @@ func (fh *FileHandle) Read(ctx context.Context, req *fuse.ReadRequest, resp *fus
 
 	fh.RLock()
 	defer fh.RUnlock()
-	resp.Data, err = api.Get(fh.F.XiaoyaoFs.MasterHost, fh.F.XiaoyaoFs.MasterPort, fh.F.Name)
+	fullPath := fh.F.fullpath()
+	resp.Data, err = api.Get(fh.F.XiaoyaoFs.MasterHost, fh.F.XiaoyaoFs.MasterPort, fullPath)
 	if err != nil {
 		return err
 	}

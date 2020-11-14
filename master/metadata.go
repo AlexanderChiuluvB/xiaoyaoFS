@@ -7,6 +7,7 @@ import (
 
 type metadata interface {
 	Get(filePath string) (Entry *Entry, err error)
+	GetEntries(value string) (Entries []*Entry, err error)
 	Set(entry *Entry) error
 	Delete(filePath string) error
 	io.Closer
@@ -14,6 +15,7 @@ type metadata interface {
 
 type Entry struct {
 	FilePath string
+	FileSize uint64
 	Vid      uint64
 	Nid      uint64
 	Uid      uint32

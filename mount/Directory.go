@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/master"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/master/api"
 	"github.com/seaweedfs/fuse"
 	"github.com/seaweedfs/fuse/fs"
 	"os"
 	"strings"
+	"time"
 )
 
 type Dir struct {
@@ -42,56 +44,177 @@ func (dir *Dir) FullPath() string {
 	return buf.String()
 }
 
-func (d *Dir) Rename(ctx context.Context, req *fuse.RenameRequest, newDir fs.Node) error {
-	panic("implement me")
-}
-
 func (d *Dir) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
-	panic("implement me")
+	if !req.Dir {
+		return d.removeFile(req)
+	}
+	return d.removeFolder(req)
 }
 
 func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.CreateResponse) (fs.Node, fs.Handle, error) {
+	var node fs.Node
+	entry := new(master.Entry)
+	entry.IsDirectory = req.Mode & os.ModeDir > 0
+	entry.Uid = req.Uid
+	entry.Gid = req.Gid
+	entry.Mode = uint32(req.Mode)
+	entry.Mtime = time.Now()
+	entry.Ctime = time.Now()
+	entry.FilePath = d.FullPath()+"/"+req.Name
 
-	isDirectory := req.Mode & os.ModeDir > 0
-	if isDirectory {
-		// create directory
-
-	} else {
-		// create file
-
+	err := api.InsertEntry(d.XiaoyaoFs.MasterHost, d.XiaoyaoFs.MasterPort, entry)
+	if err != nil {
+		return nil, nil, err
 	}
-	return nil,nil,nil
+
+	if entry.IsDirectory {
+		node = d.newDirectory(entry)
+		return node, nil, nil
+	}
+
+	node = d.newFile(req.Name, entry)
+	file := node.(*File)
+	fh, err := d.XiaoyaoFs.AcquireHandle(file, req.Uid, req.Gid)
+	if err != nil {
+		return nil, nil, err
+	}
+	return file, fh, nil
 }
 
 func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error) {
-	return nil, nil
-	//TODO 参考seaweadFS增加一层fsNode的缓存
+	var node fs.Node
+	entry := new(master.Entry)
+	entry.IsDirectory = true
+	entry.Uid = req.Uid
+	entry.Gid = req.Gid
+	entry.Mode = uint32(req.Mode)
+	entry.Mtime = time.Now()
+	entry.Ctime = time.Now()
+	entry.FilePath = d.FullPath() + "/" + req.Name
+
+	err := api.InsertEntry(d.XiaoyaoFs.MasterHost, d.XiaoyaoFs.MasterPort, entry)
+	if err != nil {
+		return nil, err
+	}
+	node = d.newDirectory(entry)
+	return node, nil
 }
 
-func (d *Dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
-	panic("implement me")
+func (d *Dir) ReadDirAll(ctx context.Context) (dirents []fuse.Dirent, err error) {
+	entries, err := api.GetEntries(d.XiaoyaoFs.MasterHost, d.XiaoyaoFs.MasterPort, d.Name)
+	if err != nil {
+		return nil, err
+	}
+	for _, entry := range entries {
+		inode := AsInode(entry.FilePath)
+		parts := strings.Split(entry.FilePath, "/")
+		name := parts[len(parts)-1]
+		if entry.IsDirectory {
+			dirent := fuse.Dirent{
+				Inode: inode,
+				Name: name,
+				Type: fuse.DT_Dir,
+			}
+			dirents = append(dirents, dirent)
+		} else {
+			dirent := fuse.Dirent{Inode: inode,
+				Name: name,
+				Type: fuse.DT_File}
+			dirents = append(dirents, dirent)
+		}
+	}
+	return
 }
 
-func (d *Dir) Lookup(ctx context.Context, req *fuse.LookupRequest, resp *fuse.LookupResponse) (fs.Node, error) {
-	panic("implement me")
+/*
+func (d *Dir) Lookup(ctx context.Context, req *fuse.LookupRequest, resp *fuse.LookupResponse) (node fs.Node, err error) {
+	fullPath := d.FullPath() + "/" + req.Name
+	entry, err := api.GetEntry(d.XiaoyaoFs.MasterHost, d.XiaoyaoFs.MasterPort, fullPath)
+	if err != nil {
+		return nil, err
+	}
+	if entry != nil {
+		if entry.IsDirectory {
+			node = d.newDirectory(entry)
+		} else {
+			node = d.newFile(req.Name, entry)
+		}
+		resp.Attr.Inode = AsInode(fullPath)
+		resp.Attr.Valid = time.Second
+		resp.Attr.Mtime = entry.Mtime
+		resp.Attr.Crtime = entry.Ctime
+		resp.Attr.Mode = os.FileMode(entry.Mode)
+		resp.Attr.Gid = entry.Gid
+		resp.Attr.Uid = entry.Uid
+		return node, nil
+	}
+	return nil, fuse.ENOENT
 }
+*/
+
 
 func (d *Dir) Attr(ctx context.Context, attr *fuse.Attr) error {
-	panic("implement me")
+
+	if d.FullPath() == d.XiaoyaoFs.rootPath {
+		d.setRootDirAttr(attr)
+		return nil
+	}
+	/*entry, err := api.GetEntry(d.XiaoyaoFs.MasterHost, d.XiaoyaoFs.MasterPort, d.FullPath())
+	if err != nil {
+		return err
+	}*/
+	attr.Inode = AsInode(d.FullPath())
+	attr.Mode = os.ModeDir
+	attr.Mtime = time.Now()
+	attr.Crtime = time.Now()
+	attr.Gid = master.OS_GID
+	attr.Uid = master.OS_UID
+	return nil
 }
 
-func (d *Dir) newFile(name string) fs.Node {
+func (d *Dir) newFile(name string, entry *master.Entry) fs.Node {
 	return &File{
 		Name:           name,
 		Dir:            d,
 		XiaoyaoFs:      d.XiaoyaoFs,
+		Entry: entry,
 	}
 }
 
+func (d *Dir) newDirectory(entry *master.Entry) fs.Node {
+	return &Dir{Name: entry.FilePath, XiaoyaoFs: d.XiaoyaoFs,
+		Entry: entry, parent: d}
+}
+
+func (d *Dir) setRootDirAttr(attr *fuse.Attr) {
+	attr.Inode = 1
+	attr.Valid = time.Hour
+	attr.BlockSize = 1024*1024
+	attr.Mode = os.ModeDir
+	attr.Ctime = time.Now()
+	attr.Crtime = time.Now()
+	attr.Mtime = time.Now()
+	attr.Uid = master.OS_UID
+	attr.Gid = master.OS_GID
+}
+
+func (d *Dir) removeFile(req *fuse.RemoveRequest) error {
+	fullPath := d.FullPath() + "/" + req.Name
+	err := api.Delete(d.XiaoyaoFs.MasterHost, d.XiaoyaoFs.MasterPort, fullPath)
+	if err != nil {
+		return fuse.ENOENT
+	}
+	return nil
+}
+
+func (d *Dir) removeFolder(req *fuse.RemoveRequest) error {
+	// Add a recursive delete method
+	return nil
+}
+
 var _ fs.Node = (*Dir)(nil)
-var _ fs.NodeRequestLookuper = (*Dir)(nil)
+//var _ fs.NodeRequestLookuper = (*Dir)(nil)
 var _ fs.NodeCreater = (*Dir)(nil)
 var _ fs.HandleReadDirAller = (*Dir)(nil)
 var _ fs.NodeMkdirer = (*Dir)(nil)
 var _ fs.NodeRemover = (*Dir)(nil)
-var _ fs.NodeRenamer = (*Dir)(nil)

@@ -1,5 +1,5 @@
 StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/storeDir1"
-
+MountDir = "/Users/alex/mountTest1"
 StoreApiHost = "localhost"
 StoreApiPort = 7900
 

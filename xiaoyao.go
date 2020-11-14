@@ -1,14 +1,14 @@
 package main
 
 import (
-	"bazil.org/fuse/fs"
 	"fmt"
 	fuse2 "github.com/AlexanderChiuluvB/xiaoyaoFS/mount"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/master"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/config"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"bazil.org/fuse"
+	"github.com/seaweedfs/fuse"
+	"github.com/seaweedfs/fuse/fs"
 	"os"
 	"os/signal"
 	"syscall"
@@ -42,11 +42,16 @@ func startMount(configFile string) {
 		panic(fmt.Errorf("NewConfig(\"%s\") error(%v)", configFile, err))
 	}
 
-	conn, err := fuse.Mount(c.StoreDir)
-	if err != nil {
-		panic(fmt.Errorf("mount %s error %v", c.StoreDir, err))
+	options := []fuse.MountOption {
+		fuse.VolumeName("xiaoyaoFS"),
+		fuse.LocalVolume(),
 	}
-	defer fuse.Unmount(c.StoreDir)
+
+	conn, err := fuse.Mount(c.MountDir, options...)
+	if err != nil {
+		panic(fmt.Errorf("mount %s error %v", c.MountDir, err))
+	}
+	defer fuse.Unmount(c.MountDir)
 
 	xiaoyaoFileSystem := fuse2.NewXiaoyaoFs(c)
 
@@ -57,8 +62,6 @@ func startMount(configFile string) {
 		panic(fmt.Errorf("mount process: %v", err))
 	}
 }
-
-
 
 func startStorageServer(configFile string) {
 	c, err := config.NewConfig(configFile)

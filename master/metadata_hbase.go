@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/config"
 	"github.com/tsuna/gohbase"
+	"github.com/tsuna/gohbase/filter"
 	"github.com/tsuna/gohbase/hrpc"
+	"io"
 	"strings"
 )
 
@@ -21,7 +23,7 @@ func NewHbaseStore(config *config.Config) (store *HbaseStore, err error) {
 	store.adminClient = gohbase.NewAdminClient(config.HbaseHost)
 
 
-	//delete
+
 	dit := hrpc.NewDisableTable(context.Background(), []byte("filemeta"))
 	err = store.adminClient.DisableTable(dit)
 	if err != nil {
@@ -35,6 +37,7 @@ func NewHbaseStore(config *config.Config) (store *HbaseStore, err error) {
 	if err != nil {
 		panic(err)
 	}
+
 
 	cFamilies := map[string]map[string]string{
 		"cf": nil,
@@ -68,6 +71,37 @@ func (store *HbaseStore) Get(filePath string) (entry *Entry, err error) {
 		return nil, err
 	}
 	return entry, nil
+}
+
+func (store *HbaseStore) GetEntries(filePathPrefix string)(entries []*Entry, err error) {
+
+	prefix := []byte(filePathPrefix)
+	pFilter := filter.NewPrefixFilter(prefix)
+	scanRequest, err := hrpc.NewScanStr(context.Background(), "filemeta",
+		hrpc.Filters(pFilter))
+	if err != nil {
+		return nil, err
+	}
+	scanner := store.client.Scan(scanRequest)
+	for {
+		result, err := scanner.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("scan failed withe error %v", err)
+		}
+		for _, cell := range result.Cells {
+			value := cell.Value
+			entry := new(Entry)
+			err = json.Unmarshal(value, entry)
+			if err != nil {
+				return nil, err
+			}
+			entries = append(entries, entry)
+		}
+	}
+	return entries, nil
 }
 
 func (store *HbaseStore) Set(entry *Entry) error {
@@ -107,16 +141,16 @@ func (store *HbaseStore) Delete(filePath string) error {
 
 func (store *HbaseStore) Close() error {
 	store.client.Close()
-	disableRpc := hrpc.NewDisableTable(context.Background(), []byte("filemeta"))
-	err := store.adminClient.DisableTable(disableRpc)
-	if err != nil {
-		return fmt.Errorf("diable table filemeta failed %v", err)
-	}
-	deleteRpc := hrpc.NewDeleteTable(context.Background(), []byte("filemeta"))
-	err = store.adminClient.DeleteTable(deleteRpc)
-	if err != nil {
-		return fmt.Errorf("delete table filemeta failed %v", err)
-	}
+	//disableRpc := hrpc.NewDisableTable(context.Background(), []byte("filemeta"))
+	//err := store.adminClient.DisableTable(disableRpc)
+	//if err != nil {
+		//return fmt.Errorf("diable table filemeta failed %v", err)
+	//}
+	//deleteRpc := hrpc.NewDeleteTable(context.Background(), []byte("filemeta"))
+	//err = store.adminClient.DeleteTable(deleteRpc)
+	//if err != nil {
+	//	return fmt.Errorf("delete table filemeta failed %v", err)
+	//}
 	return nil
 }
 
