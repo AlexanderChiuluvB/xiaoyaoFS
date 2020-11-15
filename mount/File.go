@@ -57,5 +57,50 @@ func (f *File) Attr(ctx context.Context, attr *fuse.Attr) (err error) {
 	return nil
 }
 
-var _ fs.Node = (*File)(nil)
-var _ fs.NodeOpener = (*File)(nil)
+func (file *File) Getxattr(ctx context.Context, req *fuse.GetxattrRequest, resp *fuse.GetxattrResponse) error {
+	return nil
+}
+
+func (file *File) Setattr(ctx context.Context, req *fuse.SetattrRequest, resp *fuse.SetattrResponse) error {
+	return nil
+}
+
+func (file *File) Setxattr(ctx context.Context, req *fuse.SetxattrRequest) error {
+
+	return nil
+
+}
+
+func (file *File) Removexattr(ctx context.Context, req *fuse.RemovexattrRequest) error {
+
+	return nil
+
+}
+
+func (file *File) Listxattr(ctx context.Context, req *fuse.ListxattrRequest, resp *fuse.ListxattrResponse) error {
+
+
+	return nil
+
+}
+
+func (file *File) Fsync(ctx context.Context, req *fuse.FsyncRequest) error {
+	// fsync works at OS level
+	// write the file chunks to the filerGrpcAddress
+
+	return nil
+}
+
+func (file *File) Forget() {
+
+}
+
+var _ = fs.Node(&File{})
+var _ = fs.NodeOpener(&File{})
+var _ = fs.NodeFsyncer(&File{})
+var _ = fs.NodeSetattrer(&File{})
+var _ = fs.NodeGetxattrer(&File{})
+var _ = fs.NodeSetxattrer(&File{})
+var _ = fs.NodeRemovexattrer(&File{})
+var _ = fs.NodeListxattrer(&File{})
+var _ = fs.NodeForgetter(&File{})

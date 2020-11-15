@@ -20,6 +20,79 @@ type Dir struct {
 
 }
 
+var _ = fs.Node(&Dir{})
+var _ = fs.NodeCreater(&Dir{})
+var _ = fs.NodeMkdirer(&Dir{})
+var _ = fs.NodeFsyncer(&Dir{})
+var _ = fs.NodeRequestLookuper(&Dir{})
+var _ = fs.HandleReadDirAller(&Dir{})
+var _ = fs.NodeRemover(&Dir{})
+var _ = fs.NodeRenamer(&Dir{})
+var _ = fs.NodeSetattrer(&Dir{})
+var _ = fs.NodeGetxattrer(&Dir{})
+var _ = fs.NodeSetxattrer(&Dir{})
+var _ = fs.NodeRemovexattrer(&Dir{})
+var _ = fs.NodeListxattrer(&Dir{})
+var _ = fs.NodeForgetter(&Dir{})
+
+func (dir *Dir) Removexattr(ctx context.Context, req *fuse.RemovexattrRequest) error {
+	return nil
+}
+
+func (dir *Dir) Setxattr(ctx context.Context, req *fuse.SetxattrRequest) error {
+	return nil
+}
+
+
+func (d *Dir) Getxattr(ctx context.Context, req *fuse.GetxattrRequest, resp *fuse.GetxattrResponse) error {
+	return nil
+}
+
+
+func (d *Dir) Rename(ctx context.Context, req *fuse.RenameRequest, newDirectory fs.Node) error {
+	return nil
+}
+
+func (d *Dir) Fsync(ctx context.Context, req *fuse.FsyncRequest) error {
+	// fsync works at OS level
+	// write the file chunks to the filerGrpcAddress
+
+	return nil
+}
+
+func (d *Dir) Setattr(ctx context.Context, req *fuse.SetattrRequest, resp *fuse.SetattrResponse) error {
+
+	if req.Valid.Mode() {
+		d.Entry.Mode = uint32(req.Mode)
+	}
+
+	if req.Valid.Uid() {
+		d.Entry.Uid = req.Uid
+	}
+
+	if req.Valid.Gid() {
+		d.Entry.Gid = req.Gid
+	}
+
+	if req.Valid.Mtime() {
+		d.Entry.Mtime = req.Mtime
+	}
+
+	err := api.InsertEntry(d.XiaoyaoFs.MasterHost, d.XiaoyaoFs.MasterPort, d.Entry)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func (dir *Dir) Listxattr(ctx context.Context, req *fuse.ListxattrRequest, resp *fuse.ListxattrResponse) error {
+	return nil
+}
+
+func (dir *Dir) Forget() {
+}
+
 func (dir *Dir) FullPath() string {
 	var parts []string
 	for p := dir; p != nil; p = p.parent {
@@ -68,7 +141,7 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 	}
 
 	if entry.IsDirectory {
-		node = d.newDirectory(entry)
+		node = d.newDirectory(entry, req.Name)
 		return node, nil, nil
 	}
 
@@ -96,7 +169,7 @@ func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error
 	if err != nil {
 		return nil, err
 	}
-	node = d.newDirectory(entry)
+	node = d.newDirectory(entry, req.Name)
 	return node, nil
 }
 
@@ -106,19 +179,19 @@ func (d *Dir) ReadDirAll(ctx context.Context) (dirents []fuse.Dirent, err error)
 		return nil, err
 	}
 	for _, entry := range entries {
+		entryName := strings.TrimPrefix(entry.FilePath, d.Name+"/")
 		inode := AsInode(entry.FilePath)
-		parts := strings.Split(entry.FilePath, "/")
-		name := parts[len(parts)-1]
 		if entry.IsDirectory {
 			dirent := fuse.Dirent{
 				Inode: inode,
-				Name: name,
+				Name: entryName,
 				Type: fuse.DT_Dir,
 			}
 			dirents = append(dirents, dirent)
 		} else {
-			dirent := fuse.Dirent{Inode: inode,
-				Name: name,
+			dirent := fuse.Dirent{
+				Inode: inode,
+				Name: entryName,
 				Type: fuse.DT_File}
 			dirents = append(dirents, dirent)
 		}
@@ -126,16 +199,16 @@ func (d *Dir) ReadDirAll(ctx context.Context) (dirents []fuse.Dirent, err error)
 	return
 }
 
-/*
+
 func (d *Dir) Lookup(ctx context.Context, req *fuse.LookupRequest, resp *fuse.LookupResponse) (node fs.Node, err error) {
 	fullPath := d.FullPath() + "/" + req.Name
 	entry, err := api.GetEntry(d.XiaoyaoFs.MasterHost, d.XiaoyaoFs.MasterPort, fullPath)
 	if err != nil {
 		return nil, err
 	}
-	if entry != nil {
+	if entry != nil && entry.FilePath != ""{
 		if entry.IsDirectory {
-			node = d.newDirectory(entry)
+			node = d.newDirectory(entry, req.Name)
 		} else {
 			node = d.newFile(req.Name, entry)
 		}
@@ -150,8 +223,6 @@ func (d *Dir) Lookup(ctx context.Context, req *fuse.LookupRequest, resp *fuse.Lo
 	}
 	return nil, fuse.ENOENT
 }
-*/
-
 
 func (d *Dir) Attr(ctx context.Context, attr *fuse.Attr) error {
 
@@ -181,8 +252,8 @@ func (d *Dir) newFile(name string, entry *master.Entry) fs.Node {
 	}
 }
 
-func (d *Dir) newDirectory(entry *master.Entry) fs.Node {
-	return &Dir{Name: entry.FilePath, XiaoyaoFs: d.XiaoyaoFs,
+func (d *Dir) newDirectory(entry *master.Entry, dirName string) fs.Node {
+	return &Dir{Name: dirName, XiaoyaoFs: d.XiaoyaoFs,
 		Entry: entry, parent: d}
 }
 
@@ -212,9 +283,3 @@ func (d *Dir) removeFolder(req *fuse.RemoveRequest) error {
 	return nil
 }
 
-var _ fs.Node = (*Dir)(nil)
-//var _ fs.NodeRequestLookuper = (*Dir)(nil)
-var _ fs.NodeCreater = (*Dir)(nil)
-var _ fs.HandleReadDirAller = (*Dir)(nil)
-var _ fs.NodeMkdirer = (*Dir)(nil)
-var _ fs.NodeRemover = (*Dir)(nil)
