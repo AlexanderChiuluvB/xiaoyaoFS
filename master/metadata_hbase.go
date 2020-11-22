@@ -23,7 +23,6 @@ func NewHbaseStore(config *config.Config) (store *HbaseStore, err error) {
 	store.adminClient = gohbase.NewAdminClient(config.HbaseHost)
 
 
-
 	dit := hrpc.NewDisableTable(context.Background(), []byte("filemeta"))
 	err = store.adminClient.DisableTable(dit)
 	if err != nil {

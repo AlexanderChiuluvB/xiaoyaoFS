@@ -36,7 +36,7 @@ func TestMasterAPI(t *testing.T) {
 	m, err = master.NewMaster(config1)
 	assert.NoError(t, err)
 
-	m.Metadata, err = master.NewHbaseStore(config1)
+	m.Metadata, err = master.NewCassandraStore(config1)
 	assert.NoError(t, err)
 
 	go m.Start()
@@ -158,6 +158,13 @@ func TestMasterAPI(t *testing.T) {
 
 	req, err = http.NewRequest(http.MethodDelete, fmt.Sprintf("http://%s:%d/deleteFile?filepath=%s",
 		m.MasterHost, m.MasterPort, file.Name()), nil)
+	assert.NoError(t, err)
+	resp, err = http.DefaultClient.Do(req)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	req, err = http.NewRequest(http.MethodDelete, fmt.Sprintf("http://%s:%d/deleteFile?filepath=%s",
+		m.MasterHost, m.MasterPort, beanFile.Name()), nil)
 	assert.NoError(t, err)
 	resp, err = http.DefaultClient.Do(req)
 	assert.NoError(t, err)

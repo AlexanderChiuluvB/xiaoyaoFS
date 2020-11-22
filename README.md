@@ -17,6 +17,8 @@
 ### 下一步计划
 
 1. docker 部署Hbase2.0的尝试，主要是为了用Accordion特性, 之前测试都是用1.26
+#Hbase 2.0 Docker环境搭建请参考 https://gitee.com/assad/docker-hbase
+
 
 2. go的hbase 客户端写的真烂，没有批量读取功能，需要自己开gorouine实现
 

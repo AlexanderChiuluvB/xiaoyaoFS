@@ -15,9 +15,15 @@ type Config struct {
 	MasterHost string
 	MasterPort int
 
+	MountDir string
+	MetaType string
+
+	// Hbase
 	HbaseHost string
 
-	MountDir string
+	// Cassandra
+	CassandraHosts []string
+	Keyspace       string
 }
 
 // NewConfig new a config.

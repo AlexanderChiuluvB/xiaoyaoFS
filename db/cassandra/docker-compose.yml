@@ -1,0 +1,27 @@
+version: '3'
+services:
+  cassandra-7000:
+    image: cassandra:3.11.6
+    container_name: cassandra-7000
+    volumes:
+      - ./7000:/var/lib/cassandra
+    environment:
+      - CASSANDRA_BROADCAST_ADDRESS=cassandra-7000
+    ports:
+      - "7000:7000"
+      - "9042:9042"
+    restart: always
+  cassandra-7001:
+    image: cassandra:3.11.6
+    container_name: cassandra-7001
+    volumes:
+      - ./7001:/var/lib/cassandra
+    environment:
+      - CASSANDRA_BROADCAST_ADDRESS=cassandra-7001
+      - CASSANDRA_SEEDS=cassandra-7000
+    ports:
+      - "7001:7000"
+      - "9043:9042"
+    depends_on:
+      - cassandra-7000
+    restart: always

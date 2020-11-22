@@ -97,9 +97,17 @@ func startMaster(configFile string) {
 	if err != nil {
 		panic(fmt.Errorf("NewMaster(\"%s\") error(%v)", configFile, err))
 	}
-	m.Metadata, err = master.NewHbaseStore(c)
-	if err != nil {
-		panic(fmt.Errorf("NewHbaseStore error %v", err))
+	switch c.MetaType {
+	case "Hbase":
+		m.Metadata, err = master.NewHbaseStore(c)
+		if err != nil {
+			panic(fmt.Errorf("NewHbaseStore error %v", err))
+		}
+	case "Cassandra":
+		m.Metadata, err = master.NewCassandraStore(c)
+		if err != nil {
+			panic(fmt.Errorf("NewCassandra error %v", err))
+		}
 	}
 
 	signals := make(chan os.Signal)

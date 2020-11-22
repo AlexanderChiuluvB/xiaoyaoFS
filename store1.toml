@@ -7,3 +7,7 @@ MasterHost = "localhost"
 MasterPort = 8888
 
 HbaseHost = "localhost"
+
+MetaType = "Cassandra"
+
+CassandraHosts = ["localhost:7000", "localhost:7001"]
