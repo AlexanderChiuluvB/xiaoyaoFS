@@ -92,7 +92,7 @@ func (c CassandraStore) Close() error {
 
 func NewCassandraStore(config *config.Config) (c *CassandraStore, err error) {
 	c = new(CassandraStore)
-	c.cluster = gocql.NewCluster("localhost")
+	c.cluster = gocql.NewCluster(config.CassandraHosts...)
 	c.cluster.Consistency = gocql.LocalQuorum
 	c.cluster.Keyspace = "xiaoyaofs"
 	c.session, err = c.cluster.CreateSession()

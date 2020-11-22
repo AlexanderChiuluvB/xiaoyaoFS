@@ -10,4 +10,4 @@ HbaseHost = "localhost"
 
 MetaType = "Cassandra"
 
-CassandraHosts = ["localhost:7000", "localhost:7001"]
+CassandraHosts = ["localhost"]
