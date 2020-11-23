@@ -7,6 +7,7 @@ import (
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/uuid"
 	"net/http"
 	"sync"
+	"time"
 )
 
 type Master struct {
@@ -16,11 +17,15 @@ type Master struct {
 
 	StorageStatusList []*StorageStatus
 
-
 	// key: volume id  value: volume status List
 	VolumeStatusListMap map[uint64][]*VolumeStatus
 	MapMutex sync.RWMutex
 	Metadata metadata
+
+	//只要现在的Volume少于MaxVolumeNum,就可以一直增加新的Volume
+	MaxVolumeNum int
+
+	Cache *EntryCache
 }
 
 func NewMaster(config *config.Config) (*Master, error){
@@ -36,9 +41,12 @@ func NewMaster(config *config.Config) (*Master, error){
 	} else {
 		m.MasterHost = config.MasterHost
 	}
+	m.MaxVolumeNum = config.MaxVolumeNum
 
 	m.StorageStatusList = make([]*StorageStatus, 0, 1)
 	m.VolumeStatusListMap = make(map[uint64][]*VolumeStatus)
+
+	m.Cache = New(config.Mc, time.Duration(config.ExpireMc))
 
 	m.MasterServer = http.NewServeMux()
 	m.MasterServer.HandleFunc("/getFile", m.getFile)
@@ -65,6 +73,7 @@ func (m *Master) Close() {
 	m.Metadata.Close()
 }
 
+// TODO: 负载均衡现在是遍历随机选一个
 func (m *Master) getWritableVolumes(size uint64) (uint64, []*VolumeStatus, error) {
 	m.MapMutex.RLock()
 	defer m.MapMutex.RUnlock()
@@ -133,6 +142,9 @@ func (m *Master) needCreateVolume(status *StorageStatus) bool {
 	defer m.MapMutex.RUnlock()
 
 	need := true
+	if len(m.VolumeStatusListMap) < m.MaxVolumeNum {
+		return true
+	}
 	for _, vs := range status.VStatusList {
 		if m.isValidVolumes(m.VolumeStatusListMap[vs.VolumeId], 0) {
 			need = false

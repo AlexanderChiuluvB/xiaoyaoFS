@@ -27,11 +27,17 @@ func (m *Master) getFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	filePath := r.FormValue("filepath")
-	entry, err := m.Metadata.Get(filePath)
-	if err != nil {
-		http.NotFound(w, r)
-		return
+
+	//cache
+	entry, err := m.Cache.GetMeta(filePath)
+	if entry == nil {
+		entry, err = m.Metadata.Get(filePath)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
 	}
+
 	if entry != nil {
 		m.MapMutex.RLock()
 		vStatusList, ok := m.VolumeStatusListMap[entry.Vid]
@@ -75,7 +81,11 @@ func (m *Master) insertEntry(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unmarshal " + err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	err = m.Cache.SetMeta(entry.FilePath, entry)
+	if err != nil {
+		http.Error(w, "m.Cache.SetMeta: " + err.Error(), http.StatusInternalServerError)
+		return
+	}
 	err = m.Metadata.Set(entry)
 	if err != nil {
 		http.Error(w, "set entry " + err.Error(), http.StatusInternalServerError)
@@ -146,14 +156,24 @@ func (m *Master) writeData(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errStr, http.StatusInternalServerError)
 		return
 	} else {
-		entry, err := m.Metadata.Get(filePath)
-		if err != nil {
-			http.Error(w, "m.Metadata.Get: " + err.Error(), http.StatusInternalServerError)
-			return		}
+		entry, _ := m.Cache.GetMeta(filePath)
+		if entry == nil {
+			entry, err = m.Metadata.Get(filePath)
+			if err != nil {
+				http.Error(w, "m.Metadata.Get: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
 		entry.Nid = fid
 		entry.Vid = vid
 		entry.Mtime = time.Now()
 		entry.FileSize = uint64(fileSize)
+		err = m.Cache.SetMeta(entry.FilePath, entry)
+		if err != nil {
+			http.Error(w, "m.Cache.SetMeta: " + err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		err = m.Metadata.Set(entry)
 		if err != nil {
 			http.Error(w, "m.Metadata.Set: " + err.Error(), http.StatusInternalServerError)
@@ -169,10 +189,15 @@ func (m *Master) getEntry(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	entry, err := m.Metadata.Get(r.FormValue("filepath"))
-	if err != nil {
-		http.NotFound(w, r)
-		return
+	filePath := r.FormValue("filepath")
+	//cache
+	entry, err:= m.Cache.GetMeta(filePath)
+	if entry == nil {
+		entry, err = m.Metadata.Get(filePath)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
 	}
 	entryBytes, err := json.Marshal(entry)
 	if err != nil {
@@ -191,6 +216,7 @@ func (m *Master) getEntries(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	//TODO CACHE?
 	entries, err := m.Metadata.GetEntries(r.FormValue("prefix"))
 	if err != nil {
 		http.NotFound(w, r)
@@ -281,6 +307,12 @@ func (m *Master) uploadFile(w http.ResponseWriter, r *http.Request) {
 		entry.Gid = OS_GID
 		entry.Mode = uint32(os.ModePerm)
 
+		err = m.Cache.SetMeta(entry.FilePath, entry)
+		if err != nil {
+			http.Error(w, "m.Cache.SetMeta: " + err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		err = m.Metadata.Set(entry)
 		if err != nil {
 			http.Error(w, "m.Metadata.Set: " + err.Error(), http.StatusInternalServerError)
@@ -330,6 +362,8 @@ func (m *Master) deleteFile(w http.ResponseWriter, r *http.Request) {
 		}
 		wg.Wait()
 
+		//TODO: delMeta if exists
+		_ = m.Cache.DelMeta(filePath)
 		err = m.Metadata.Delete(filePath)
 		if err != nil {
 			deleteErr = append(deleteErr, fmt.Errorf("m.Metadata.Delete(%s) %s", r.FormValue("filepath"), err.Error()))

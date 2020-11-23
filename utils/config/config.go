@@ -1,6 +1,8 @@
 package config
 
 import (
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/cacheUtils"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/time"
 	"github.com/BurntSushi/toml"
 	"io/ioutil"
 	"os"
@@ -18,12 +20,17 @@ type Config struct {
 	MountDir string
 	MetaType string
 
+	MaxVolumeNum int
+
 	// Hbase
 	HbaseHost string
 
 	// Cassandra
 	CassandraHosts []string
 	Keyspace       string
+
+	Mc *cacheUtils.Config
+	ExpireMc time.Duration
 }
 
 // NewConfig new a config.

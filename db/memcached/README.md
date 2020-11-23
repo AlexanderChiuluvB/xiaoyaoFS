@@ -1,0 +1,1 @@
+docker run --name memcached -m 256m -p 11211:11211 -d memcached
