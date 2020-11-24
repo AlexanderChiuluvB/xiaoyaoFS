@@ -64,19 +64,23 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotModified)
 	} else {
 		//TODO: io.Copy
-		s.NeedleLock.Lock()
-		_, err := n.File.Seek(int64(n.NeedleOffset +volume.FixedNeedleSize+ uint64(len(n.FileName)) + n.CurrentOffset),0)
+		//s.NeedleLock.RLock()
+		/*_, err := n.File.Seek(int64(n.NeedleOffset +volume.FixedNeedleSize+ uint64(len(n.FileName)) + n.CurrentOffset),0)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("file seek error %v", err), http.StatusInternalServerError)
 			return
-		}
-		_, err = io.CopyN(w, n.File, int64(n.FileSize))
+		}*/
+		_, err = io.CopyN(w, n, int64(n.FileSize))
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Read Needle data error %v", err), http.StatusInternalServerError)
 			return
 		}
-		s.NeedleLock.Unlock()
+		//s.NeedleLock.RUnlock()
 
+		//if err != nil {
+		//	http.Error(w, fmt.Sprintf("write Needle data to writer error %v", err), http.StatusInternalServerError)
+		//	return
+		//}
 	}
 }
 

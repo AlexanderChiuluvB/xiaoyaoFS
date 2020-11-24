@@ -25,7 +25,7 @@ type Volume struct {
 	Path          string
 	File          *os.File // Volume File 用一个Byte来存储当前的Offset
 	Directory     Directory
-	lock          sync.Mutex
+	rwlock        sync.RWMutex
 	Writeable     bool
 }
 
@@ -46,7 +46,7 @@ func NewVolume(vid uint64, dir string) (v *Volume, err error) {
 		return nil, fmt.Errorf("new leveldb directory :%v", err)
 	}
 	//defer v.Directory.Close()
-	v.lock = sync.Mutex{}
+	v.rwlock = sync.RWMutex{}
 	v.MaxSize = MaxVolumeSize
 	v.Writeable = true
 	//每一次Volume重启,都需要读取其第一个byte以获得当前的offset
@@ -66,6 +66,8 @@ func NewVolume(vid uint64, dir string) (v *Volume, err error) {
 }
 
 func (v *Volume) GetNeedle(id uint64) (needle *Needle, err error) {
+	//v.rwlock.RLock()
+	//defer v.rwlock.RUnlock()
 	needle, err = v.Directory.Get(id)
 	if err != nil {
 		return nil, err
@@ -76,8 +78,8 @@ func (v *Volume) GetNeedle(id uint64) (needle *Needle, err error) {
 
 //删除needle的时候只是简单删除了db的metadata,并没有删除volume上的needle的真实数据
 func (v *Volume) DelNeedle(id uint64) (err error) {
-	v.lock.Lock()
-	defer v.lock.Unlock()
+	v.rwlock.Lock()
+	defer v.rwlock.Unlock()
 	_, err = v.Directory.Get(id)
 	if err != nil {
 		return err
@@ -126,8 +128,8 @@ func (v *Volume) allocSpace(fileBodySize uint64, filenameSize uint64) (offset ui
 // 2. set needle's header
 // 3. create meta info
 func (v *Volume) NewNeedle(id uint64, fileName string, fileSize uint64) (n *Needle, err error) {
-	v.lock.Lock()
-	defer v.lock.Unlock()
+	v.rwlock.Lock()
+	defer v.rwlock.Unlock()
 
 	fileNameSize := uint64(len(fileName))
 	offset, err := v.allocSpace(fileSize, fileNameSize)

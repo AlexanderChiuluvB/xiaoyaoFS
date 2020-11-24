@@ -60,25 +60,21 @@ func UnMarshalBinary(data []byte) (N *Needle, err error){
 
 func (f *Needle)Read(b []byte) (n int, err error) {
 	start := f.NeedleOffset + FixedNeedleSize + uint64(len(f.FileName)) + f.CurrentOffset
-	end := start + f.FileSize
-	length := end - start
-	if len(b) > int(length) {
-		b = b[:length]
+	if len(b) > int(f.FileSize) {
+		b = b[:f.FileSize]
 	}
 	n, err = f.File.ReadAt(b, int64(start))
 	f.CurrentOffset += uint64(n)
-	if f.CurrentOffset >= f.FileSize {
+	if f.CurrentOffset > f.FileSize {
 		err = io.EOF
 	}
-	return n, nil
+	return
 }
 
 func (f *Needle)Write(b []byte) (n int, err error) {
 	start := f.NeedleOffset + FixedNeedleSize + uint64(len(f.FileName)) + f.CurrentOffset
-	end := start + f.FileSize
-	length := end - start
 
-	if len(b) > int(length) {
+	if len(b) > int(f.FileSize) {
 		return 0, errSmallNeedle
 	} else {
 		num, err := f.File.WriteAt(b, int64(start))
