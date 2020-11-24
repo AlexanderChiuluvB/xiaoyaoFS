@@ -1,23 +1,12 @@
 StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/storeDir2"
-
 StoreApiHost = "localhost"
 StoreApiPort = 7901
 
-MasterHost = "localhost"
-MasterPort = 8888
-
-HbaseHost = "localhost"
-
-MetaType = "Cassandra"
-
-CassandraHosts = ["localhost"]
-
 ExpireMc = "10m"
-
 [Mc]
-name = "xiaoyaofs"
+name = "store2"
 proto = "tcp"
-addr = "localhost:11212"
+addr = "localhost:11213"
 idle = 5
 active = 10
 dialTimeout = "1s"

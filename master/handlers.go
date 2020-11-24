@@ -14,8 +14,8 @@ import (
 )
 
 var (
-OS_UID = uint32(os.Getuid())
-OS_GID = uint32(os.Getgid())
+  OS_UID = uint32(os.Getuid())
+  OS_GID = uint32(os.Getgid())
 )
 type Size interface {
 	Size() int64

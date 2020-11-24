@@ -33,20 +33,19 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if fid, err = strconv.ParseUint(r.FormValue("fid"), 10, 64); err != nil {
+		http.Error(w, fmt.Sprintf("strconv.ParseInt(\"%s\") error(%v)", r.FormValue("fid"), err), http.StatusBadRequest)
+		return
+	}
 	v := s.Volumes[vid]
 	if v == nil {
 		http.Error(w, "can't find volume", http.StatusNotFound)
 		return
 	}
 
-	if fid, err = strconv.ParseUint(r.FormValue("fid"), 10, 64); err != nil {
-		http.Error(w, fmt.Sprintf("strconv.ParseInt(\"%s\") error(%v)", r.FormValue("fid"), err), http.StatusBadRequest)
-		return
-	}
-
 	n, err := v.GetNeedle(fid)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Get Needle of fid %d if volume vid %d error %v", fid, vid, err), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Get Needle of fid %d of volume vid %d error %v", fid, vid, err), http.StatusBadRequest)
 		return
 	}
 
@@ -76,7 +75,6 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 }
 
 func (s *Store) GetNeedle(w http.ResponseWriter, r *http.Request){
@@ -95,14 +93,14 @@ func (s *Store) GetNeedle(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	v := s.Volumes[vid]
-	if v == nil {
-		http.Error(w, "can't find volume", http.StatusNotFound)
+	if fid, err = strconv.ParseUint(r.FormValue("fid"), 10, 64); err != nil {
+		http.Error(w, fmt.Sprintf("strconv.ParseInt(\"%s\") error(%v)", r.FormValue("fid"), err), http.StatusBadRequest)
 		return
 	}
 
-	if fid, err = strconv.ParseUint(r.FormValue("fid"), 10, 64); err != nil {
-		http.Error(w, fmt.Sprintf("strconv.ParseInt(\"%s\") error(%v)", r.FormValue("fid"), err), http.StatusBadRequest)
+	v := s.Volumes[vid]
+	if v == nil {
+		http.Error(w, "can't find volume", http.StatusNotFound)
 		return
 	}
 
@@ -111,7 +109,6 @@ func (s *Store) GetNeedle(w http.ResponseWriter, r *http.Request){
 		http.Error(w, fmt.Sprintf("Get Needle of fid %d of volume vid %d error %v", fid, vid, err), http.StatusBadRequest)
 		return
 	}
-
 	needleBytes, err := json.Marshal(n)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("marshal needle data of fid %d of volume vid %d error %v", fid, vid, err), http.StatusBadRequest)
@@ -180,7 +177,7 @@ func (s *Store) Put(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = v.NewFile(fid, &data, header.Filename)
+	_, err = v.NewFile(fid, &data, header.Filename)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -219,6 +216,8 @@ func (s *Store) Del(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	s.Cache.DelNeedle(vid, fid)
+
 	w.WriteHeader(http.StatusAccepted)
 }
 

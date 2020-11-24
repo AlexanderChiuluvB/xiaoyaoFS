@@ -3,21 +3,12 @@ MountDir = "/Users/alex/mountTest1"
 StoreApiHost = "localhost"
 StoreApiPort = 7900
 
-MasterHost = "localhost"
-MasterPort = 8888
-
-HbaseHost = "localhost"
-
-MetaType = "Cassandra"
-
-CassandraHosts = ["localhost"]
 
 ExpireMc = "10m"
-
 [Mc]
-name = "xiaoyaofs"
+name = "store1"
 proto = "tcp"
-addr = "localhost:11211"
+addr = "localhost:11212"
 idle = 5
 active = 10
 dialTimeout = "1s"

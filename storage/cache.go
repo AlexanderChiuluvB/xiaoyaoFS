@@ -32,14 +32,18 @@ func (c *NeedleCache) Ping() (err error) {
 	return
 }
 
-func NeedleKey(id uint64) string {
-	return fmt.Sprintf("n/%s", strconv.FormatUint(id, 10))
+func NeedleKey(vid, nid uint64) string {
+	return fmt.Sprintf("n/%s/%s", strconv.FormatUint(vid, 10), strconv.FormatUint(nid, 10))
 }
 
-func (c *NeedleCache) GetNeedle(id uint64) (n *volume.Needle, err error) {
+func FileKey(vid, nid uint64) string {
+	return fmt.Sprintf("f/%s/%s", strconv.FormatUint(vid, 10), strconv.FormatUint(nid, 10))
+}
+
+func (c *NeedleCache) GetNeedle(vid, nid uint64) (n *volume.Needle, err error) {
 	var (
 		bs  []byte
-		key = NeedleKey(id)
+		key = NeedleKey(vid, nid)
 	)
 	bs, err = c.get(key)
 	if err != nil {
@@ -51,13 +55,13 @@ func (c *NeedleCache) GetNeedle(id uint64) (n *volume.Needle, err error) {
 	}
 	n = new(volume.Needle)
 	if err = json.Unmarshal(bs, n); err != nil {
-		return nil, errors.New(fmt.Sprintf("cache Meta.Unmarshal(%d) error(%v)", id, err))
+		return nil, errors.New(fmt.Sprintf("cache Meta.Unmarshal(%d.%d) error(%v)", vid, nid, err))
 	}
 	return
 }
 
-func (c *NeedleCache) SetNeedle(id uint64, n *volume.Needle) (err error) {
-	key := NeedleKey(id)
+func (c *NeedleCache) SetNeedle(vid, nid uint64, n *volume.Needle) (err error) {
+	key := NeedleKey(vid, nid)
 	bs, err := json.Marshal(n)
 	if err != nil {
 		return errors.New(fmt.Sprintf("cache setMeta() Marshal(%s) error(%v)", bs, err))
@@ -65,12 +69,13 @@ func (c *NeedleCache) SetNeedle(id uint64, n *volume.Needle) (err error) {
 	if err = c.set(key, bs, c.expire); err != nil {
 		return errors.New(fmt.Sprintf("cache setMeta() set(%s,%s) error(%v)", key, string(bs), err))
 	}
+
 	return
 }
 
 // DelMeta del meta from cache.
-func (c *NeedleCache) DelNeedle(id uint64) (err error) {
-	key := NeedleKey(id)
+func (c *NeedleCache) DelNeedle(vid, nid uint64) (err error) {
+	key := NeedleKey(vid, nid)
 	if err = c.del(key); err != nil {
 		return errors.New(fmt.Sprintf("cache DelMeta(%s) error(%v)", key, err))
 	}

@@ -25,7 +25,6 @@ var MaxDiskUsedPercent uint = 90
 // one store contains several volumes
 type Store struct {
 	Volumes map[uint64]*volume.Volume
-	//TODO ZOOKEEPER
 	VolumesLock 	sync.Mutex // protect Volumes map
 
 	StoreDir string //Store对应的目录，该目录下存放着各个Volume File
@@ -38,6 +37,9 @@ type Store struct {
 	// each store server connects to a master server
 	MasterHost string
 	MasterPort int
+
+	Cache *NeedleCache
+
 }
 
 func NewStore(config *config.Config) (*Store, error) {
@@ -59,6 +61,7 @@ func NewStore(config *config.Config) (*Store, error) {
 	}
 
 	store.Volumes = make(map[uint64]*volume.Volume)
+	store.Cache = New(config.Mc, time.Duration(config.ExpireMc))
 
 	for _, volumeFile := range volumeInfos {
 		volumeFileName := volumeFile.Name()

@@ -165,17 +165,17 @@ func (v *Volume) NewNeedle(id uint64, fileName string, fileSize uint64) (n *Need
 	return n, err
 }
 
-func (v *Volume) NewFile(id uint64, data *[]byte, fileName string) (err error){
+func (v *Volume) NewFile(id uint64, data *[]byte, fileName string) (needle *Needle, err error){
 
-	needle, err := v.NewNeedle(id, fileName, uint64(len(*data)))
+	needle, err = v.NewNeedle(id, fileName, uint64(len(*data)))
 	if err != nil {
-		return fmt.Errorf("new needle : %v", err)
+		return nil, fmt.Errorf("new needle : %v", err)
 	}
 	_, err = needle.Write(*data)
 	if err != nil {
-		return fmt.Errorf("needle write error %v", err)
+		return nil, fmt.Errorf("needle write error %v", err)
 	}
-	return nil
+	return needle, nil
 }
 
 func (v *Volume) GetVolumeSize() uint64 {

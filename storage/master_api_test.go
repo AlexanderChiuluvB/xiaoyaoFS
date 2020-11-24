@@ -33,10 +33,12 @@ func TestMasterAPI(t *testing.T) {
 	config2, err = config.NewConfig("../store2.toml")
 	assert.NoError(t, err)
 
-	m, err = master.NewMaster(config1)
+	configMaster, err := config.NewConfig("../master.toml")
+
+	m, err = master.NewMaster(configMaster)
 	assert.NoError(t, err)
 
-	m.Metadata, err = master.NewCassandraStore(config1)
+	m.Metadata, err = master.NewCassandraStore(configMaster)
 	assert.NoError(t, err)
 
 	go m.Start()
