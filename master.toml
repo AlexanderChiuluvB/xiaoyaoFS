@@ -1,11 +1,18 @@
 MasterHost = "localhost"
 MasterPort = 8888
-MetaType = "Cassandra"
+MetaType = "Redis"
 CassandraHosts = ["localhost"]
 HbaseHost = "localhost"
-ExpireMc = "10m"
+
+# redis
+RedisHost = "localhost"
+RedisPort = 6379
+Password = "110120"
+Database = 0
+
 MaxVolumeNum = 5
 
+ExpireMc = "10m"
 [Mc]
 name = "xiaoyaofs"
 proto = "tcp"

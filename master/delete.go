@@ -20,7 +20,7 @@ func Delete(host string, port int, vid uint64, fid uint64) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusAccepted {
+	if resp.StatusCode == http.StatusOK {
 		return nil
 	}else {
 		body, _ := ioutil.ReadAll(resp.Body)

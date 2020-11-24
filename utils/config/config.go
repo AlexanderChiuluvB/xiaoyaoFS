@@ -20,7 +20,11 @@ type Config struct {
 	MountDir string
 	MetaType string
 
-	MaxVolumeNum int
+	//Redis
+	RedisHost string
+	RedisPort int
+	Password  string
+	Database  int
 
 	// Hbase
 	HbaseHost string
@@ -29,8 +33,9 @@ type Config struct {
 	CassandraHosts []string
 	Keyspace       string
 
-	Mc *cacheUtils.Config
-	ExpireMc time.Duration
+	Mc           *cacheUtils.Config
+	ExpireMc     time.Duration
+	MaxVolumeNum int
 }
 
 // NewConfig new a config.

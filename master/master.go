@@ -7,7 +7,6 @@ import (
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/uuid"
 	"net/http"
 	"sync"
-	"time"
 )
 
 type Master struct {
@@ -35,6 +34,24 @@ func NewMaster(config *config.Config) (*Master, error){
 	} else {
 		m.MasterPort = config.MasterPort
 	}
+	var err error
+	switch config.MetaType {
+	case "Hbase":
+		m.Metadata, err = NewHbaseStore(config)
+		if err != nil {
+			panic(fmt.Errorf("NewHbaseStore error %v", err))
+		}
+	case "Cassandra":
+		m.Metadata, err = NewCassandraStore(config)
+		if err != nil {
+			panic(fmt.Errorf("NewCassandra error %v", err))
+		}
+	case "Redis":
+		m.Metadata, err = NewRedisStore(config)
+		if err != nil {
+			panic(fmt.Errorf("NewRedis error %v", err))
+		}
+	}
 
 	if config.MasterHost == "" {
 		m.MasterHost = "localhost"
@@ -46,7 +63,7 @@ func NewMaster(config *config.Config) (*Master, error){
 	m.StorageStatusList = make([]*StorageStatus, 0, 1)
 	m.VolumeStatusListMap = make(map[uint64][]*VolumeStatus)
 
-	m.Cache = New(config.Mc, time.Duration(config.ExpireMc))
+//	m.Cache = New(config.Mc, time.Duration(config.ExpireMc))
 
 	m.MasterServer = http.NewServeMux()
 	m.MasterServer.HandleFunc("/getFile", m.getFile)

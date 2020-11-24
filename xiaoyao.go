@@ -6,6 +6,8 @@ import (
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/master"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/config"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/parser"
+	b "github.com/AlexanderChiuluvB/xiaoyaoFS/utils/benchmark"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"github.com/seaweedfs/fuse"
 	"github.com/seaweedfs/fuse/fs"
@@ -20,7 +22,13 @@ var (
 	masterServer = app.Command("master", "master server")
 	storageServer = app.Command("storage", "storage server")
 	mount = app.Command("mount", "mount the xiaoyaoFs to a directory")
-)
+	benchmark = app.Command("benchmark", "benchmark")
+	bmMasterHost = benchmark.Flag("masterHost", "host of master server").Default("localhost").String()
+	bmMasterPort = benchmark.Flag("masterPort", "post of master server").Default("8888").Int()
+	bmConcurrent = benchmark.Flag("concurrent", "concurrent").Default("32").Int()
+	bmNum = benchmark.Flag("num", "number of file write/read").Default("1000").Int()
+	bmSize = parser.Size(benchmark.Flag("size", "size of file write/read").Default("1024B"))
+	)
 
 func main() {
 	command := kingpin.MustParse(app.Parse(os.Args[1:]))
@@ -32,6 +40,8 @@ func main() {
 		startStorageServer(*configFile)
 	case mount.FullCommand():
 		startMount(*configFile)
+	case benchmark.FullCommand():
+		b.Benchmark(*bmMasterHost, *bmMasterPort, *bmConcurrent, *bmNum, int(*bmSize))
 	}
 
 }
@@ -97,18 +107,7 @@ func startMaster(configFile string) {
 	if err != nil {
 		panic(fmt.Errorf("NewMaster(\"%s\") error(%v)", configFile, err))
 	}
-	switch c.MetaType {
-	case "Hbase":
-		m.Metadata, err = master.NewHbaseStore(c)
-		if err != nil {
-			panic(fmt.Errorf("NewHbaseStore error %v", err))
-		}
-	case "Cassandra":
-		m.Metadata, err = master.NewCassandraStore(c)
-		if err != nil {
-			panic(fmt.Errorf("NewCassandra error %v", err))
-		}
-	}
+
 
 	signals := make(chan os.Signal)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)

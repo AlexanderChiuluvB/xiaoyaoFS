@@ -28,14 +28,10 @@ func (m *Master) getFile(w http.ResponseWriter, r *http.Request) {
 	}
 	filePath := r.FormValue("filepath")
 
-	//cache
-	entry, err := m.Cache.GetMeta(filePath)
-	if entry == nil {
-		entry, err = m.Metadata.Get(filePath)
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
+	entry, err := m.Metadata.Get(filePath)
+	if err != nil {
+		http.NotFound(w, r)
+		return
 	}
 
 	if entry != nil {
@@ -307,11 +303,11 @@ func (m *Master) uploadFile(w http.ResponseWriter, r *http.Request) {
 		entry.Gid = OS_GID
 		entry.Mode = uint32(os.ModePerm)
 
-		err = m.Cache.SetMeta(entry.FilePath, entry)
+		/*err = m.Cache.SetMeta(entry.FilePath, entry)
 		if err != nil {
 			http.Error(w, "m.Cache.SetMeta: " + err.Error(), http.StatusInternalServerError)
 			return
-		}
+		}*/
 
 		err = m.Metadata.Set(entry)
 		if err != nil {
@@ -363,7 +359,7 @@ func (m *Master) deleteFile(w http.ResponseWriter, r *http.Request) {
 		wg.Wait()
 
 		//TODO: delMeta if exists
-		_ = m.Cache.DelMeta(filePath)
+		//_ = m.Cache.DelMeta(filePath)
 		err = m.Metadata.Delete(filePath)
 		if err != nil {
 			deleteErr = append(deleteErr, fmt.Errorf("m.Metadata.Delete(%s) %s", r.FormValue("filepath"), err.Error()))

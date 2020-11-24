@@ -14,17 +14,17 @@ import (
 	"path/filepath"
 )
 
-func Upload(host string, port int, filePath string) error {
+func Upload(host string, port int, dstFilePath, srcFilePath string) error {
 
 	body := new(bytes.Buffer)
 	mPart := multipart.NewWriter(body)
 
-	filePart, err := mPart.CreateFormFile("file", filepath.Base(filePath))
+	filePart, err := mPart.CreateFormFile("file", filepath.Base(srcFilePath))
 	if err != nil {
 		return err
 	}
 
-	file, err := os.Open(filePath)
+	file, err := os.Open(srcFilePath)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func Upload(host string, port int, filePath string) error {
 
 	mPart.Close()
 	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s:%d/uploadFile?filepath=%s",
-		host, port, filePath), body)
+		host, port, dstFilePath), body)
 	if err != nil {
 		return err
 	}

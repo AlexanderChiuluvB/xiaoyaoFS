@@ -38,9 +38,6 @@ func TestMasterAPI(t *testing.T) {
 	m, err = master.NewMaster(configMaster)
 	assert.NoError(t, err)
 
-	m.Metadata, err = master.NewCassandraStore(configMaster)
-	assert.NoError(t, err)
-
 	go m.Start()
 
 	store1, err = NewStore(config1)

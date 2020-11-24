@@ -7,6 +7,7 @@ import (
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/config"
 	"github.com/gocql/gocql"
 	"path/filepath"
+	"time"
 )
 
 type CassandraStore struct {
@@ -93,8 +94,9 @@ func (c CassandraStore) Close() error {
 func NewCassandraStore(config *config.Config) (c *CassandraStore, err error) {
 	c = new(CassandraStore)
 	c.cluster = gocql.NewCluster(config.CassandraHosts...)
-	c.cluster.Consistency = gocql.LocalQuorum
+	c.cluster.Consistency = gocql.Any
 	c.cluster.Keyspace = "xiaoyaofs"
+	c.cluster.Timeout = time.Duration(time.Second*2)
 	c.session, err = c.cluster.CreateSession()
 	if err != nil {
 		panic(err)
