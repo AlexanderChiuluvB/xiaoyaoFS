@@ -25,7 +25,7 @@ var MaxDiskUsedPercent uint = 90
 // one store contains several volumes
 type Store struct {
 	Volumes map[uint64]*volume.Volume
-	VolumesLock 	sync.Mutex // protect Volumes map
+	NeedleLock      sync.Mutex
 
 	StoreDir string //Store对应的目录，该目录下存放着各个Volume File
 

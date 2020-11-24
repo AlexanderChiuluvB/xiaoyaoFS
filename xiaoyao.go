@@ -25,8 +25,8 @@ var (
 	benchmark = app.Command("benchmark", "benchmark")
 	bmMasterHost = benchmark.Flag("masterHost", "host of master server").Default("localhost").String()
 	bmMasterPort = benchmark.Flag("masterPort", "post of master server").Default("8888").Int()
-	bmConcurrent = benchmark.Flag("concurrent", "concurrent").Default("32").Int()
-	bmNum = benchmark.Flag("num", "number of file write/read").Default("1000").Int()
+	bmConcurrent = benchmark.Flag("concurrent", "concurrent").Default("16").Int()
+	bmNum = benchmark.Flag("num", "number of file write/read").Default("1").Int()
 	bmSize = parser.Size(benchmark.Flag("size", "size of file write/read").Default("1024B"))
 	)
 

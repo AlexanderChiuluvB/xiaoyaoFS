@@ -333,12 +333,17 @@ func (m *Master) deleteFile(w http.ResponseWriter, r *http.Request) {
 	if entry != nil {
 		m.MapMutex.RLock()
 		vStatusList, ok := m.VolumeStatusListMap[entry.Vid]
+		if !ok {
+			http.Error(w, fmt.Sprintf("Cant find volume %d", entry.Vid), http.StatusNotFound)
+			return
+		}
 		m.MapMutex.RUnlock()
 		if !ok {
 			http.Error(w, fmt.Sprintf("Cant find volume %d", entry.Vid), http.StatusNotFound)
 			return
 		} else if !m.isValidVolumes(vStatusList, 0) {
 			http.Error(w, "can't delete file, because its readonly.", http.StatusNotAcceptable)
+			return
 		}
 
 		wg := sync.WaitGroup{}
