@@ -183,9 +183,7 @@ func (m *Master) updateStorageStatus(newStatus *StorageStatus) {
 						break
 					}
 				}
-				m.MapMutex.Lock()
 				m.VolumeStatusListMap[vs.VolumeId] = vsList
-				m.MapMutex.Unlock()
 			}
 			break
 		}
