@@ -36,18 +36,8 @@ func NewMaster(config *config.Config) (*Master, error){
 	}
 	var err error
 	switch config.MetaType {
-	case "Hbase":
-		m.Metadata, err = NewHbaseStore(config)
-		if err != nil {
-			panic(fmt.Errorf("NewHbaseStore error %v", err))
-		}
-	case "Cassandra":
-		m.Metadata, err = NewCassandraStore(config)
-		if err != nil {
-			panic(fmt.Errorf("NewCassandra error %v", err))
-		}
 	case "Redis":
-		m.Metadata, err = NewRedisStore(config)
+		m.Metadata, err = NewRedis2Store(config)
 		if err != nil {
 			panic(fmt.Errorf("NewRedis error %v", err))
 		}
