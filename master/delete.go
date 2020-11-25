@@ -26,6 +26,4 @@ func Delete(host string, port int, vid uint64, fid uint64) error {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return errors.New(string(body))
 	}
-
-
 }

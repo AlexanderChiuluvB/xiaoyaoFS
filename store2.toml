@@ -2,6 +2,9 @@ StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/storeDir2"
 StoreApiHost = "localhost"
 StoreApiPort = 7901
 
+CassandraHosts = ["localhost"]
+Keyspace = "store2"
+
 ExpireMc = "10m"
 [Mc]
 name = "store2"

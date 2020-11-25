@@ -3,6 +3,8 @@ MountDir = "/Users/alex/mountTest1"
 StoreApiHost = "localhost"
 StoreApiPort = 7900
 
+CassandraHosts = ["localhost"]
+Keyspace = "store1"
 
 ExpireMc = "10m"
 [Mc]

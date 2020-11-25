@@ -38,8 +38,8 @@ type Store struct {
 	MasterHost string
 	MasterPort int
 
+	Directory *volume.CassandraDirectory
 	Cache *NeedleCache
-
 }
 
 func NewStore(config *config.Config) (*Store, error) {
@@ -54,14 +54,12 @@ func NewStore(config *config.Config) (*Store, error) {
 
 	store := new(Store)
 	store.StoreDir = config.StoreDir
-
 	volumeInfos, err := ioutil.ReadDir(config.StoreDir)
 	if err != nil {
 		panic(err)
 	}
 
 	store.Volumes = make(map[uint64]*volume.Volume)
-	store.Cache = New(config.Mc, time.Duration(config.ExpireMc))
 
 	for _, volumeFile := range volumeInfos {
 		volumeFileName := volumeFile.Name()
@@ -101,11 +99,13 @@ func NewStore(config *config.Config) (*Store, error) {
 		store.MasterPort = config.MasterPort
 	}
 
+	store.Directory, err = volume.NewCassandraDirectory(config)
+
 	store.ApiServer = http.NewServeMux()
 
 	store.ApiServer.HandleFunc("/add_volume", store.AddVolume)
 	store.ApiServer.HandleFunc("/get", store.Get)
-	store.ApiServer.HandleFunc("/getNeedle", store.GetNeedle)
+	//store.ApiServer.HandleFunc("/getNeedle", store.GetNeedle)
 	store.ApiServer.HandleFunc("/put", store.Put)
 	store.ApiServer.HandleFunc("/del", store.Del)
 
@@ -122,9 +122,7 @@ func (store *Store) Start() {
 }
 
 func (store *Store) Close() {
-	for _, v := range store.Volumes {
-		v.Directory.Close()
-	}
+	store.Directory.Close()
 }
 
 func (store *Store) HeartBeat() {
