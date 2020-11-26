@@ -41,7 +41,7 @@ func NewVolume(vid uint64, dir string) (v *Volume, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("open file :%v", err)
 	}
-	v.Directory, err = NewLeveldbDirectory(dir, vid)
+	v.Directory, err = NewBadgerDBDirectory(dir, vid)
 	if err != nil {
 		return nil, fmt.Errorf("new leveldb directory :%v", err)
 	}
