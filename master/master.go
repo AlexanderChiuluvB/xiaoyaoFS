@@ -37,7 +37,7 @@ func NewMaster(config *config.Config) (*Master, error){
 	var err error
 	switch config.MetaType {
 	case "Redis":
-		m.Metadata, err = NewRedis2Store(config)
+		m.Metadata, err = NewBadgerMetaStore(config)
 		if err != nil {
 			panic(fmt.Errorf("NewRedis error %v", err))
 		}

@@ -1,3 +1,5 @@
+StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/masterDir"
+
 MasterHost = "localhost"
 MasterPort = 8888
 MetaType = "Redis"

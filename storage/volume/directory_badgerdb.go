@@ -14,6 +14,7 @@ type BadgerDBDirectory struct {
 func NewBadgerDBDirectory(dir string) (d *BadgerDBDirectory, err error) {
 	d = new(BadgerDBDirectory)
 	d.path = filepath.Join(dir, "index")
+	//TODO ADD 如果不存在就添加该文件夹的逻辑
 	d.db, err = badger.Open(badger.DefaultOptions(d.path).WithSyncWrites(false))
 	return
 }
