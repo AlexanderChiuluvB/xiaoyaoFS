@@ -39,7 +39,6 @@ type Store struct {
 	MasterPort int
 
 	Cache *NeedleCache
-
 }
 
 func NewStore(config *config.Config) (*Store, error) {
