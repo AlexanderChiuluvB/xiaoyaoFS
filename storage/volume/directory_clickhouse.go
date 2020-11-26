@@ -32,9 +32,9 @@ func NewClickHouseDirectory(config *config.Config) (c *ClickHouseDirectory, err 
 			nid UInt64,
 			meta String,
 			datetime DateTime
-		) engine=MergeTree(DateTime) 
+		) engine=MergeTree() 
 		PARTITION BY toYYYYMM(datetime)
-		ORDER BY (directory, filename)
+		ORDER BY (vid, nid)
 	`); err != nil {
 		fmt.Printf("Clickhouse create filemeta failed, err = %v", err)
 	}

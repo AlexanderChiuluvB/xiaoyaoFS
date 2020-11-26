@@ -2,6 +2,8 @@ StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/storeDir2"
 StoreApiHost = "localhost"
 StoreApiPort = 7901
 
+ClickHouseHost = "tcp://127.0.0.1:9000?debug=true"
+
 CassandraHosts = ["localhost"]
 Keyspace = "store2"
 
