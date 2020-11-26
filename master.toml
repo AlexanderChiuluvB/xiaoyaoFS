@@ -10,7 +10,7 @@ RedisPort = 6379
 Password = "110120"
 Database = 0
 
-MaxVolumeNum = 1
+MaxVolumeNum = 5
 
 ExpireMc = "10m"
 [Mc]
