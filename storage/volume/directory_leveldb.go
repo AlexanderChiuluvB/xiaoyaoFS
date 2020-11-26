@@ -6,7 +6,6 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"path/filepath"
-	"strconv"
 )
 
 type LeveldbDirectory struct {
@@ -14,9 +13,9 @@ type LeveldbDirectory struct {
 	path string // leveldb 文件存放路径
 }
 
-func NewLeveldbDirectory(dir string, vid uint64) (d *LeveldbDirectory, err error) {
+func NewLeveldbDirectory(dir string) (d *LeveldbDirectory, err error) {
 	d = new(LeveldbDirectory)
-	d.path = filepath.Join(dir, strconv.FormatUint(vid, 10) + ".index")
+	d.path = filepath.Join(dir, "index")
 	opts := &opt.Options{
 		BlockCacheCapacity:            32 * 1024 * 1024, // default value is 8MiB
 		WriteBuffer:                   16 * 1024 * 1024, // default value is 4MiB
@@ -29,9 +28,10 @@ func NewLeveldbDirectory(dir string, vid uint64) (d *LeveldbDirectory, err error
 	return
 }
 
-func (d *LeveldbDirectory) Get(id uint64) (n *Needle, err error) {
-	key := make([]byte, 8)
-	binary.BigEndian.PutUint64(key, id)
+func (d *LeveldbDirectory) Get(vid, nid uint64) (n *Needle, err error) {
+	key := make([]byte, 16)
+	binary.BigEndian.PutUint64(key[:8], vid)
+	binary.BigEndian.PutUint64(key[8:16], nid)
 	data, err := d.db.Get(key, nil)
 	if err != nil {
 		return nil, err
@@ -39,36 +39,29 @@ func (d *LeveldbDirectory) Get(id uint64) (n *Needle, err error) {
 	return UnMarshalBinary(data)
 }
 
-func (d *LeveldbDirectory) New(n *Needle) (err error) {
-	data, err := MarshalBinary(n)
-	if err != nil {
-		return err
-	}
-	return d.db.Put(data[:8], data, nil)
-}
-
-func (d *LeveldbDirectory) Has(id uint64) (has bool) {
-	key := make([]byte, 8)
-	binary.BigEndian.PutUint64(key, id)
+func (d *LeveldbDirectory) Has(vid, nid uint64) (has bool) {
+	key := make([]byte, 16)
+	binary.BigEndian.PutUint64(key[:8], vid)
+	binary.BigEndian.PutUint64(key[8:16], nid)
 	_, err := d.db.Get(key, nil)
 	return err == nil
 }
 
-func (d *LeveldbDirectory) Set(id uint64, needle *Needle) (err error) {
-	oldNeedle, err := d.Get(id)
+func (d *LeveldbDirectory) Set(vid, nid uint64, needle *Needle) (err error) {
+	key := make([]byte, 16)
+	binary.BigEndian.PutUint64(key[:8], vid)
+	binary.BigEndian.PutUint64(key[8:16], nid)
+	data, err := MarshalBinary(needle)
 	if err != nil {
-		return
+		return err
 	}
-	err = d.Del(id)
-	if err != nil {
-		return d.New(oldNeedle)
-	}
-	return d.New(needle)
+	return d.db.Put(key, data, nil)
 }
 
-func (d *LeveldbDirectory) Del(id uint64) (err error) {
-	key := make([]byte, 8)
-	binary.BigEndian.PutUint64(key, id)
+func (d *LeveldbDirectory) Del(vid, nid uint64) (err error) {
+	key := make([]byte, 16)
+	binary.BigEndian.PutUint64(key[:8], vid)
+	binary.BigEndian.PutUint64(key[8:16], nid)
 	return d.db.Delete(key, nil)
 }
 
