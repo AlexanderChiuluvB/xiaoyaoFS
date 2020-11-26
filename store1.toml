@@ -3,6 +3,8 @@ MountDir = "/Users/alex/mountTest1"
 StoreApiHost = "localhost"
 StoreApiPort = 7900
 
+ClickHouseHost = "tcp://127.0.0.1:9000?debug=true"
+
 CassandraHosts = ["localhost"]
 Keyspace = "store1"
 

@@ -18,6 +18,7 @@ type Config struct {
 	MasterPort int
 
 	MountDir string
+
 	MetaType string
 
 	//Redis
@@ -33,9 +34,13 @@ type Config struct {
 	CassandraHosts []string
 	Keyspace       string
 
-	Mc           *cacheUtils.Config
-	ExpireMc     time.Duration
-	MaxVolumeNum int
+	// ClickHouse
+	ClickHouseHost string
+
+
+	Mc             *cacheUtils.Config
+	ExpireMc       time.Duration
+	MaxVolumeNum   int
 }
 
 // NewConfig new a config.

@@ -38,7 +38,7 @@ type Store struct {
 	MasterHost string
 	MasterPort int
 
-	Directory *volume.CassandraDirectory
+	Directory *volume.ClickHouseDirectory
 	Cache *NeedleCache
 }
 
@@ -99,7 +99,7 @@ func NewStore(config *config.Config) (*Store, error) {
 		store.MasterPort = config.MasterPort
 	}
 
-	store.Directory, err = volume.NewCassandraDirectory(config)
+	store.Directory, err = volume.NewClickHouseDirectory(config)
 
 	store.ApiServer = http.NewServeMux()
 
