@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
-	"github.com/syndtr/goleveldb/leveldb/opt"
 	"path/filepath"
 )
 
@@ -16,12 +15,12 @@ type LeveldbDirectory struct {
 func NewLeveldbDirectory(dir string) (d *LeveldbDirectory, err error) {
 	d = new(LeveldbDirectory)
 	d.path = filepath.Join(dir, "index")
-	opts := &opt.Options{
+	/*opts := &opt.Options{
 		BlockCacheCapacity:            32 * 1024 * 1024, // default value is 8MiB
 		WriteBuffer:                   16 * 1024 * 1024, // default value is 4MiB
 		CompactionTableSizeMultiplier: 4,
-	}
-	d.db, err = leveldb.OpenFile(d.path, opts)
+	}*/
+	d.db, err = leveldb.OpenFile(d.path, nil)
 	if err != nil {
 		return nil, err
 	}

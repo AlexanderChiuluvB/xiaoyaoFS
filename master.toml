@@ -1,6 +1,8 @@
+StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/masterDir"
+
 MasterHost = "localhost"
 MasterPort = 8888
-MetaType = "Redis"
+MetaType = "LevelDB"
 CassandraHosts = ["localhost"]
 HbaseHost = "localhost"
 
@@ -10,7 +12,7 @@ RedisPort = 6379
 Password = "110120"
 Database = 0
 
-MaxVolumeNum = 1
+MaxVolumeNum = 5
 
 ExpireMc = "10m"
 [Mc]

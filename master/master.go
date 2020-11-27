@@ -41,6 +41,11 @@ func NewMaster(config *config.Config) (*Master, error){
 		if err != nil {
 			panic(fmt.Errorf("NewRedis error %v", err))
 		}
+	case "LevelDB":
+		m.Metadata, err = NewLevelDBMetaStore(config)
+		if err != nil {
+			panic(fmt.Errorf("NewLevelDB error %v", err))
+		}
 	}
 
 	if config.MasterHost == "" {
