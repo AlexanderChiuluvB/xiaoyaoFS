@@ -38,8 +38,6 @@ type Store struct {
 	MasterHost string
 	MasterPort int
 
-	Cache *NeedleCache
-
 }
 
 func NewStore(config *config.Config) (*Store, error) {
@@ -61,7 +59,6 @@ func NewStore(config *config.Config) (*Store, error) {
 	}
 
 	store.Volumes = make(map[uint64]*volume.Volume)
-	store.Cache = New(config.Mc, time.Duration(config.ExpireMc))
 
 	for _, volumeFile := range volumeInfos {
 		volumeFileName := volumeFile.Name()
