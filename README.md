@@ -17,6 +17,20 @@
 ### API 使用
 
 
+上传 
+```
+curl -F file=@localFilePath  'http://localhost:8888/uploadFile?filepath=/example.png'
+```
+
+获取
+```
+wget 'http://localhost:8888/getFile?filepath=/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/test/nut.png'
+```
+
+删除metadata(不会删除Volume中的真实数据)
+```
+curl -X DELETE 'http://localhost:8888/deleteFile?filepath=/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/test/nut.png'
+```
 
 
 ### 分支说明
