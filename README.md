@@ -14,15 +14,84 @@
 3.FUSE的目录实现，缓存机制
 
 
-### 下一步计划
+### 分支说明
 
-1. docker 部署Hbase2.0的尝试，主要是为了用Accordion特性, 之前测试都是用1.26
-#Hbase 2.0 Docker环境搭建请参考 https://gitee.com/assad/docker-hbase
+#### main 分支
 
+每个Volume文件都由一个嵌入式的leveldb维护KEY-VALUE映射关系
 
-2. go的hbase 客户端写的真烂，没有批量读取功能，需要自己开gorouine实现
+Master Server 用Redis 存储 <FileName, Nid> 的映射关系
 
-3. 在master层访问hbase获得metadata的时候，加一层布隆过滤器可以用blocked bloom filter
+Storage Server 用LevelDB 存储<Nid, Needle> 的映射关系
 
-4. 在master尝试不同的数据库来存meta,可以试试redis,badgerDB,tikv 
+master.toml 
+
+```
+StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/masterDir"
+
+MasterHost = "localhost"
+MasterPort = 8888
+
+MetaType = "Redis"
+# redis
+RedisHost = "localhost"
+RedisPort = 6379
+#Password = "110120"
+Database = 0
+
+MaxVolumeNum = 5
+```
+storage.toml
+
+```
+StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/storeDir1"
+
+StoreApiHost = "localhost"
+StoreApiPort = 7900
+MasterHost = "localhost"
+MasterPort = 8888
+```
+
+docker 启动 redis
+
+```
+docker run -p 6379:6379 -d redis:latest redis-server
+```
+
+单Master单Storage启动方法
+
+```
+./xiaoyaoFS --config=master.toml master
+./xiaoyaoFS --config=store1.toml storage
+```
+
+挂载到某文件夹
+具体文件夹路径在配置文件中设置MountDir = "/Users/alex/mountTest1"
+
+```
+./xiaoyaoFS --config=store1.toml mount
+```
+
+以下分支都不支持挂载
+
+#### leveldb_one_storage_no_entry
+
+和main分支区别为单个LevelDB维护整个Storage Server所有Volume对应的Key value关系
+
+Master Server 用Redis/LevelDB 存储 <FileName, <Vid,Nid>> 的映射关系
+
+Storage Server 用LevelDB 存储<<Vid,Nid>, Needle> 的映射关系
+
+#### clickhouse_no_entry
+
+storage Server使用ClickHouse维护<<Vid,Nid>, Needle> 的映射关系
+
+#### cassandra_no_entry
+
+storage Server使用Cassandra维护<<Vid,Nid>, Needle> 的映射关系
+
+#### badger_one_storage_no_entry
+
+master Server/storage Server使用Badger维护<<Vid,Nid>, Needle> 的映射关系
+
 

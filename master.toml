@@ -2,10 +2,8 @@ StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/masterDir"
 
 MasterHost = "localhost"
 MasterPort = 8888
-MetaType = "LevelDB"
-CassandraHosts = ["localhost"]
-HbaseHost = "localhost"
 
+MetaType = "Redis"
 # redis
 RedisHost = "localhost"
 RedisPort = 6379
@@ -13,15 +11,3 @@ Password = "110120"
 Database = 0
 
 MaxVolumeNum = 5
-
-ExpireMc = "10m"
-[Mc]
-name = "xiaoyaofs"
-proto = "tcp"
-addr = "localhost:11211"
-idle = 5
-active = 10
-dialTimeout = "1s"
-readTimeout = "1s"
-writeTimeout = "1s"
-idleTimeout = "80s"
