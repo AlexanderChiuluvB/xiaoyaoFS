@@ -14,6 +14,11 @@
 3.FUSE的目录实现，缓存机制
 
 
+### API 使用
+
+
+
+
 ### 分支说明
 
 #### main 分支
@@ -84,9 +89,12 @@ Storage Server 用LevelDB 存储<<Vid,Nid>, Needle> 的映射关系
 
 #### clickhouse_no_entry
 
+在db/clickhouse 中,`docker compose up -d`启动一个单节点ClickHouse做测试
+
 storage Server使用ClickHouse维护<<Vid,Nid>, Needle> 的映射关系
 
 #### cassandra_no_entry
+在db/cassandra中，用,`docker compose up -d`启动一个双节点集群，并且参照README.md创建表
 
 storage Server使用Cassandra维护<<Vid,Nid>, Needle> 的映射关系
 

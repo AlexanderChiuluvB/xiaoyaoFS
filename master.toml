@@ -7,7 +7,7 @@ MetaType = "Redis"
 # redis
 RedisHost = "localhost"
 RedisPort = 6379
-Password = "110120"
+#Password = "110120"
 Database = 0
 
 MaxVolumeNum = 5
