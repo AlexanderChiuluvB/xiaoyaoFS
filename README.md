@@ -68,11 +68,12 @@ storage.toml
 
 ```
 StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/storeDir1"
-
-StoreApiHost = "localhost"
-StoreApiPort = 7900
+MountDir = "/Users/alex/mountTest1"
 MasterHost = "localhost"
 MasterPort = 8888
+StoreApiHost = "localhost"
+StoreApiPort = 7900
+
 ```
 
 docker 启动 redis
