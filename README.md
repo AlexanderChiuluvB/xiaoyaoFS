@@ -43,7 +43,7 @@ curl -X DELETE 'http://localhost:8888/deleteFile?filepath=/Users/alex/go/src/git
 
 每个Volume文件都由一个嵌入式的leveldb维护KEY-VALUE映射关系
 
-Master Server 用Redis 存储 <FileName, <Vid,Nid>> 的映射关系
+Master Server 用Redis存储 <FileName, <Vid,Nid>> 的映射关系
 
 Storage Server 用LevelDB 存储<<Vid,Nid>, Needle> 的映射关系
 
@@ -68,12 +68,11 @@ storage.toml
 
 ```
 StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/storeDir1"
-MountDir = "/Users/alex/mountTest1"
-MasterHost = "localhost"
-MasterPort = 8888
+
 StoreApiHost = "localhost"
 StoreApiPort = 7900
-
+MasterHost = "localhost"
+MasterPort = 8888
 ```
 
 docker 启动 redis
@@ -91,7 +90,8 @@ docker run -p 6379:6379 -d redis:latest redis-server
 ```
 ### 挂载
 
-切换到FUSE 分支。FUSE 分支支持在Master Server使用Redis/Hbase/Cassandra存储metadata。默认使用redis
+切换到FUSE 分支。FUSE 分支支持在Master Server使用Redis/Hbase/Cassandra/ClickHouse存储metadata。默认使用redis
+但是Redis重启后所有数据将丢失，不能持久化。所以开发计划是默认用clickhouse
 
 挂载到某文件夹
 具体文件夹路径在配置文件中设置MountDir = "/Users/alex/mountTest1"
@@ -102,7 +102,19 @@ docker run -p 6379:6379 -d redis:latest redis-server
 
 以下分支都不支持挂载
 
+然后上传文件的时候，必须要保证filepath参数和挂载路径相同
+
+curl -F file=@localFilePath  'http://localhost:8888/uploadFile?filepath=/Users/alex/mountTest1/example.png'
+
+如果上传的是目录结构，那么需要手动在挂载的文件夹创建相应的目录，如
+
+curl -F file=@localFilePath  'http://localhost:8888/uploadFile?filepath=/Users/alex/mountTest1/testdir/example.png'
+
+那么首先要手动在mountTest1文件夹创建testdir文件夹
+
 #### leveldb_one_storage_no_entry
+
+建议生产上使用该分支，并且Master 使用 ClickHouse 存储映射关系
 
 和main分支区别为单个LevelDB维护整个Storage Server所有Volume对应的Key value关系
 
