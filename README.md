@@ -13,6 +13,10 @@
 
 3.FUSE的目录实现，缓存机制
 
+### TODO 2020/12/1
+
+
+
 
 ### API 使用
 
@@ -80,12 +84,13 @@ docker run -p 6379:6379 -d redis:latest redis-server
 单Master单Storage启动方法
 
 
-### 挂载
-
 ```
 ./xiaoyaoFS --config=master.toml master
 ./xiaoyaoFS --config=store1.toml storage
 ```
+### 挂载
+
+切换到FUSE 分支。FUSE 分支支持在Master Server使用Redis/Hbase/Cassandra存储metadata。默认使用redis
 
 挂载到某文件夹
 具体文件夹路径在配置文件中设置MountDir = "/Users/alex/mountTest1"
