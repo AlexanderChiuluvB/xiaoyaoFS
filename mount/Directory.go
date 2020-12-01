@@ -174,12 +174,12 @@ func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error
 }
 
 func (d *Dir) ReadDirAll(ctx context.Context) (dirents []fuse.Dirent, err error) {
-	entries, err := api.GetEntries(d.XiaoyaoFs.MasterHost, d.XiaoyaoFs.MasterPort, d.Name)
+	entries, err := api.GetEntries(d.XiaoyaoFs.MasterHost, d.XiaoyaoFs.MasterPort, d.FullPath())
 	if err != nil {
 		return nil, err
 	}
 	for _, entry := range entries {
-		entryName := strings.TrimPrefix(entry.FilePath, d.Name+"/")
+		entryName := strings.TrimPrefix(entry.FilePath, d.FullPath()+"/")
 		inode := AsInode(entry.FilePath)
 		if entry.IsDirectory {
 			dirent := fuse.Dirent{
