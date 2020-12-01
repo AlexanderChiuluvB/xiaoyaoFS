@@ -46,6 +46,11 @@ func NewMaster(config *config.Config) (*Master, error){
 		if err != nil {
 			panic(fmt.Errorf("NewLevelDB error %v", err))
 		}
+	case "ClickHouse":
+		m.Metadata, err = NewClickHouseMetaStore(config)
+		if err != nil {
+			panic(fmt.Errorf("NewClickHouse error %v", err))
+		}
 	}
 
 	if config.MasterHost == "" {
