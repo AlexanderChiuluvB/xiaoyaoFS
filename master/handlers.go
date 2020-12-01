@@ -56,17 +56,133 @@ func (m *Master) getFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Master) insertEntry(w http.ResponseWriter, r *http.Request) {
-	panic("implement me")
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	file, _, err := r.FormFile("entry")
+	if err != nil {
+		http.Error(w, "r.FromFile: " + err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		http.Error(w, "ioutil.Readall " + err.Error(), http.StatusInternalServerError)
+		return
+	}
+	entry := new(Entry)
+	err = json.Unmarshal(data, entry)
+	if err != nil {
+		http.Error(w, "Unmarshal " + err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = m.Metadata.Set(entry)
+	if err != nil {
+		http.Error(w, "set entry " + err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
 }
-
 
 func (m *Master) writeData(w http.ResponseWriter, r *http.Request) {
-	panic("implement me")
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "r.FromFile: " + err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	filePath := r.FormValue("filepath")
+	fileName := filepath.Base(filePath)
+
+	var fileSize int64
+	switch file.(type){
+	case *os.File:
+		s, _ := file.(*os.File).Stat()
+		fileSize = s.Size()
+	case Size:
+		fileSize = file.(Size).Size()
+	}
+
+	vid, writableVolumeStatusList, err := m.getWritableVolumes(uint64(fileSize))
+	if err != nil {
+		http.Error(w, "m.getWritableVolumes: " + err.Error(), http.StatusInternalServerError)
+		return
+	}
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		http.Error(w, "ioutil.Readall " + err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fid := uuid.UniqueId()
+	wg := sync.WaitGroup{}
+	var uploadErr []error
+	for _, vStatus := range writableVolumeStatusList {
+		wg.Add(1)
+		go func(vs *VolumeStatus) {
+			defer wg.Done()
+			//给该vid对应的所有volume上传文件
+			err = vs.UploadFile(fid, &data, fileName)
+			if err != nil {
+				uploadErr = append(uploadErr, fmt.Errorf("host: %s port: %d error: %s", vs.StoreStatus.ApiHost, vs.StoreStatus.ApiPort, err))
+			}
+		}(vStatus)
+	}
+	wg.Wait()
+	if len(uploadErr) !=0 {
+		for _, vStatus := range writableVolumeStatusList {
+			go vStatus.Delete(fid)
+		}
+		errStr := ""
+		for _, err := range uploadErr {
+			errStr += err.Error() + "\n"
+		}
+		http.Error(w, errStr, http.StatusInternalServerError)
+		return
+	} else {
+		entry, err := m.Metadata.Get(filePath)
+		if err != nil {
+			http.Error(w, "m.Metadata.Get: " + err.Error(), http.StatusInternalServerError)
+			return
+		}
+		entry.Nid = fid
+		entry.Vid = vid
+		entry.Mtime = time.Now()
+		entry.FileSize = uint64(fileSize)
+		err = m.Metadata.Set(entry)
+		if err != nil {
+			http.Error(w, "m.Metadata.Set: " + err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+	}
 }
 
-
 func (m *Master) getEntry(w http.ResponseWriter, r *http.Request) {
-	panic("implement me")
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	entry, err := m.Metadata.Get(r.FormValue("entry"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	entriesBytes, err := json.Marshal(entry)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("json marshal entry error: %v", err), http.StatusInternalServerError)
+		return
+	}
+	_, err = w.Write(entriesBytes)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("write marshaled bytes to writer error: %v", err), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (m *Master) getEntries(w http.ResponseWriter, r *http.Request) {
@@ -155,14 +271,22 @@ func (m *Master) uploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		entry := new(Entry)
-		err = m.Metadata.Set(filePath, vid, nid)
+		entry.FilePath = filePath
+		entry.Nid = nid
+		entry.Vid = vid
+		entry.FileSize = uint64(fileSize)
+		entry.Gid = OS_GID
+		entry.Uid = OS_UID
+		entry.Mtime = time.Now()
+		entry.Ctime = time.Now()
+		entry.Mode = uint32(os.ModePerm)
+		err = m.Metadata.Set(entry)
 		if err != nil {
 			http.Error(w, "m.Metadata.Set: " + err.Error(), http.StatusInternalServerError)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
 	}
-
 }
 
 func (m *Master) deleteFile(w http.ResponseWriter, r *http.Request) {

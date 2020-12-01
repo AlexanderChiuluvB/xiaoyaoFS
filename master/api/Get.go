@@ -2,11 +2,14 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/master"
 	"io/ioutil"
 	"net/http"
 )
+
+var NOT_FOUND_ERROR = errors.New("Not Found!")
 
 func Get(host string, port int, filePath string) ([]byte, error) {
 
@@ -27,7 +30,7 @@ func Get(host string, port int, filePath string) ([]byte, error) {
 
 func GetEntry(host string, port int, filePath string) (entry *master.Entry, err error) {
 
-	resp, err := http.Get(fmt.Sprintf("http://%s:%d/getEntry?filepath=%s", host,
+	resp, err := http.Get(fmt.Sprintf("http://%s:%d/getEntry?entry=%s", host,
 		port, filePath))
 	if err != nil {
 		return nil, err
@@ -45,7 +48,9 @@ func GetEntry(host string, port int, filePath string) (entry *master.Entry, err 
 			return nil, err
 		}
 		return entry, nil
-	}else {
+	} else if resp.StatusCode == http.StatusNotFound {
+		return nil, NOT_FOUND_ERROR
+	} else {
 		return nil, fmt.Errorf("%d != 200", resp.StatusCode)
 	}
 }

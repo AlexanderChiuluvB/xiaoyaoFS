@@ -203,7 +203,7 @@ func (d *Dir) ReadDirAll(ctx context.Context) (dirents []fuse.Dirent, err error)
 func (d *Dir) Lookup(ctx context.Context, req *fuse.LookupRequest, resp *fuse.LookupResponse) (node fs.Node, err error) {
 	fullPath := d.FullPath() + "/" + req.Name
 	entry, err := api.GetEntry(d.XiaoyaoFs.MasterHost, d.XiaoyaoFs.MasterPort, fullPath)
-	if err != nil {
+	if err != nil && err != api.NOT_FOUND_ERROR {
 		return nil, err
 	}
 	if entry != nil && entry.FilePath != ""{
@@ -279,7 +279,11 @@ func (d *Dir) removeFile(req *fuse.RemoveRequest) error {
 }
 
 func (d *Dir) removeFolder(req *fuse.RemoveRequest) error {
-	// Add a recursive delete method
+	fullPath := d.FullPath() + "/" + req.Name
+	err := api.Delete(d.XiaoyaoFs.MasterHost, d.XiaoyaoFs.MasterPort, fullPath)
+	if err != nil {
+		return fuse.ENOENT
+	}
 	return nil
 }
 

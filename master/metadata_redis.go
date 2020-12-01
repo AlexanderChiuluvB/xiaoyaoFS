@@ -27,7 +27,7 @@ func NewRedisStore(config *config.Config)(*MetadataRedis, error) {
 }
 
 func (m *MetadataRedis) GetEntries(prefix string) (Entries []*Entry, err error) {
-	keysResult := m.client.Keys(prefix)
+	keysResult := m.client.Keys(prefix+"*")
 	keys, err := keysResult.Result()
 	if err != nil {
 		return nil, err
