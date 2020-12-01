@@ -6,9 +6,9 @@ import (
 )
 
 type metadata interface {
-	Get(filePath string) (vid, nid uint64, err error)
+	Get(filePath string) (entry *Entry, err error)
 	GetEntries(filePath string) (Entries []*Entry, err error)
-	Set(filePath string, vid, nid uint64) error
+	Set(entry *Entry) error
 	Delete(filePath string) error
 	io.Closer
 }

@@ -11,10 +11,6 @@ type MetadataRedis struct {
 	client *redis.Client
 }
 
-func (m *MetadataRedis) GetEntries(value string) (Entries []*Entry, err error) {
-	panic("implement me")
-}
-
 func NewRedisStore(config *config.Config)(*MetadataRedis, error) {
 	mr := new(MetadataRedis)
 	mr.client = redis.NewClient(&redis.Options{
@@ -28,6 +24,27 @@ func NewRedisStore(config *config.Config)(*MetadataRedis, error) {
 		return nil, err
 	}
 	return mr, nil
+}
+
+func (m *MetadataRedis) GetEntries(prefix string) (Entries []*Entry, err error) {
+	keysResult := m.client.Keys(prefix)
+	keys, err := keysResult.Result()
+	if err != nil {
+		return nil, err
+	}
+	for _, filePath := range keys {
+		entry := new(Entry)
+		data, err := m.client.Get(filePath).Result()
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal([]byte(data), entry)
+		if err != nil {
+			return nil, err
+		}
+		Entries = append(Entries, entry)
+	}
+	return Entries, nil
 }
 
 func (m *MetadataRedis)Get(filePath string) (entry *Entry, err error) {

@@ -82,7 +82,6 @@ docker run -p 6379:6379 -d redis:latest redis-server
 
 ### 挂载
 
-
 ```
 ./xiaoyaoFS --config=master.toml master
 ./xiaoyaoFS --config=store1.toml storage
