@@ -38,8 +38,6 @@ func NewMaster(config *config.Config) (*Master, error){
 	switch config.MetaType {
 	case "Redis":
 		m.Metadata, err = NewRedis2Store(config)
-<<<<<<< HEAD
-=======
 		if err != nil {
 			panic(fmt.Errorf("NewRedis error %v", err))
 		}
@@ -50,7 +48,6 @@ func NewMaster(config *config.Config) (*Master, error){
 		}
 	case "ClickHouse":
 		m.Metadata, err = NewClickHouseMetaStore(config)
->>>>>>> leveldb_one_storage_no_entry
 		if err != nil {
 			panic(fmt.Errorf("NewClickHouse error %v", err))
 		}
