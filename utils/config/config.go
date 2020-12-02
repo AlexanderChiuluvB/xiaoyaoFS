@@ -1,7 +1,6 @@
 package config
 
 import (
-	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/cacheUtils"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/time"
 	"github.com/BurntSushi/toml"
 	"io/ioutil"
@@ -19,6 +18,7 @@ type Config struct {
 
 	MountDir string
 
+	// master meta type
 	MetaType string
 
 	//Redis
@@ -37,10 +37,10 @@ type Config struct {
 	// ClickHouse
 	ClickHouseHost string
 
+	ExpireTime       time.Duration
+	PurgeTime        time.Duration
+	MaxVolumeNum     int
 
-	Mc             *cacheUtils.Config
-	ExpireMc       time.Duration
-	MaxVolumeNum   int
 }
 
 // NewConfig new a config.

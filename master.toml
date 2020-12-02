@@ -5,6 +5,11 @@ MasterPort = 8888
 
 MetaType = "ClickHouse"
 
+# 缓存超时时间 5min
+ExpireTime = "5m"
+# 清除超时数据的周期 10min
+PurgeTime = "10m"
+
 # ClickHouse
 ClickHouseHost = "tcp://127.0.0.1:9000?debug=true"
 

@@ -18,7 +18,7 @@ func (m *MetadataLevelDB) GetEntries(filePath string) (Entries []*Entry, err err
 
 func NewLevelDBMetaStore(config *config.Config)(m *MetadataLevelDB, err error) {
 	m = new(MetadataLevelDB)
-	m.path = filepath.Join(config.StoreDir, "index")
+	m.path = filepath.Join(config.StoreDir, "dbindex")
 	m.db, err = leveldb.OpenFile(m.path, nil)
 	if err != nil {
 		return nil, err

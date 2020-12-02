@@ -24,7 +24,7 @@ type Master struct {
 	//只要现在的Volume少于MaxVolumeNum,就可以一直增加新的Volume
 	MaxVolumeNum int
 
-	Cache *EntryCache
+	Cache *MetaCache
 }
 
 func NewMaster(config *config.Config) (*Master, error){
@@ -52,7 +52,7 @@ func NewMaster(config *config.Config) (*Master, error){
 			panic(fmt.Errorf("NewClickHouse error %v", err))
 		}
 	}
-
+	m.Cache = newMetaCache(config)
 	if config.MasterHost == "" {
 		m.MasterHost = "localhost"
 	} else {
@@ -62,8 +62,6 @@ func NewMaster(config *config.Config) (*Master, error){
 
 	m.StorageStatusList = make([]*StorageStatus, 0, 1)
 	m.VolumeStatusListMap = make(map[uint64][]*VolumeStatus)
-
-//	m.Cache = New(config.Mc, time.Duration(config.ExpireMc))
 
 	m.MasterServer = http.NewServeMux()
 	m.MasterServer.HandleFunc("/getFile", m.getFile)

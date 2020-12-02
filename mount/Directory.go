@@ -238,8 +238,8 @@ func (d *Dir) Attr(ctx context.Context, attr *fuse.Attr) error {
 	attr.Mode = os.ModeDir
 	attr.Mtime = time.Now()
 	attr.Crtime = time.Now()
-	attr.Gid = master.OS_GID
-	attr.Uid = master.OS_UID
+	attr.Gid = master.OsGid
+	attr.Uid = master.OsUid
 	return nil
 }
 
@@ -265,8 +265,8 @@ func (d *Dir) setRootDirAttr(attr *fuse.Attr) {
 	attr.Ctime = time.Now()
 	attr.Crtime = time.Now()
 	attr.Mtime = time.Now()
-	attr.Uid = master.OS_UID
-	attr.Gid = master.OS_GID
+	attr.Uid = master.OsUid
+	attr.Gid = master.OsGid
 }
 
 func (d *Dir) removeFile(req *fuse.RemoveRequest) error {

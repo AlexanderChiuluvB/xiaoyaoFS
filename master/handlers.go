@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/uuid"
+	gocache "github.com/patrickmn/go-cache"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -14,9 +15,15 @@ import (
 )
 
 var (
-  OS_UID = uint32(os.Getuid())
-  OS_GID = uint32(os.Getgid())
-)
+  OsUid = uint32(os.Getuid())
+  OsGid = uint32(os.Getgid())
+  )
+
+type MetaID struct {
+	VID uint64
+	NID uint64
+}
+
 type Size interface {
 	Size() int64
 }
@@ -27,11 +34,18 @@ func (m *Master) getFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	filePath := r.FormValue("filepath")
+	var vid,nid uint64
+	var err error
 
-	vid, nid, err := m.Metadata.Get(filePath)
-	if err != nil {
-		http.NotFound(w, r)
-		return
+	if metaID, found := m.Cache.c.Get(filePath); found {
+		meta := metaID.(*MetaID)
+		vid, nid = meta.VID, meta.NID
+	} else {
+		vid, nid, err = m.Metadata.Get(filePath)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
 	}
 
 	if vid != 0 && nid != 0 {
@@ -154,6 +168,7 @@ func (m *Master) uploadFile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errStr, http.StatusInternalServerError)
 		return
 	} else {
+		m.Cache.c.Set(filePath, &MetaID{NID: nid, VID: vid}, gocache.DefaultExpiration)
 		err = m.Metadata.Set(filePath, vid, nid)
 		if err != nil {
 			http.Error(w, "m.Metadata.Set: " + err.Error(), http.StatusInternalServerError)
@@ -209,7 +224,7 @@ func (m *Master) deleteFile(w http.ResponseWriter, r *http.Request) {
 		wg.Wait()
 
 		//TODO: delMeta if exists
-		//_ = m.Cache.DelMeta(filePath)
+		m.Cache.c.Delete(filePath)
 		err = m.Metadata.Delete(filePath)
 		if err != nil {
 			deleteErr = append(deleteErr, fmt.Errorf("m.Metadata.Delete(%s) %s", r.FormValue("filepath"), err.Error()))
