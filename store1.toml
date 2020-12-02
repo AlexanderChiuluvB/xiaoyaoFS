@@ -12,4 +12,3 @@ ClickHouseHost = "tcp://127.0.0.1:9000?debug=true"
 CassandraHosts = ["localhost"]
 Keyspace = "store1"
 
-ExpireMc = "10m"
