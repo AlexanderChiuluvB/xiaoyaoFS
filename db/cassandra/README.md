@@ -15,3 +15,6 @@ CREATE KEYSPACE xiaoyaofs WITH replication = {'class':'SimpleStrategy', 'replica
 
 
 cqlsh 进入命令行
+
+ CREATE KEYSPACE store1 WITH replication = {'class':'SimpleStrategy', 'replication_factor' : 1};
+ USE store1; CREATE TABLE IF NOT EXISTS needle (vid bigint, nid bigint, meta blob, PRIMARY KEY (vid, nid));

@@ -24,7 +24,7 @@ type Master struct {
 	//只要现在的Volume少于MaxVolumeNum,就可以一直增加新的Volume
 	MaxVolumeNum int
 
-	Cache *EntryCache
+	Cache *MetaCache
 }
 
 func NewMaster(config *config.Config) (*Master, error){
@@ -38,11 +38,24 @@ func NewMaster(config *config.Config) (*Master, error){
 	switch config.MetaType {
 	case "Redis":
 		m.Metadata, err = NewRedis2Store(config)
+<<<<<<< HEAD
+=======
 		if err != nil {
 			panic(fmt.Errorf("NewRedis error %v", err))
 		}
+	case "LevelDB":
+		m.Metadata, err = NewLevelDBMetaStore(config)
+		if err != nil {
+			panic(fmt.Errorf("NewLevelDB error %v", err))
+		}
+	case "ClickHouse":
+		m.Metadata, err = NewClickHouseMetaStore(config)
+>>>>>>> leveldb_one_storage_no_entry
+		if err != nil {
+			panic(fmt.Errorf("NewClickHouse error %v", err))
+		}
 	}
-
+	m.Cache = newMetaCache(config)
 	if config.MasterHost == "" {
 		m.MasterHost = "localhost"
 	} else {
@@ -52,8 +65,6 @@ func NewMaster(config *config.Config) (*Master, error){
 
 	m.StorageStatusList = make([]*StorageStatus, 0, 1)
 	m.VolumeStatusListMap = make(map[uint64][]*VolumeStatus)
-
-//	m.Cache = New(config.Mc, time.Duration(config.ExpireMc))
 
 	m.MasterServer = http.NewServeMux()
 	m.MasterServer.HandleFunc("/getFile", m.getFile)

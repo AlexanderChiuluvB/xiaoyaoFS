@@ -38,6 +38,8 @@ type Store struct {
 	MasterHost string
 	MasterPort int
 
+	Directory *volume.LeveldbDirectory
+	Cache *NeedleCache
 }
 
 func NewStore(config *config.Config) (*Store, error) {
@@ -52,7 +54,6 @@ func NewStore(config *config.Config) (*Store, error) {
 
 	store := new(Store)
 	store.StoreDir = config.StoreDir
-
 	volumeInfos, err := ioutil.ReadDir(config.StoreDir)
 	if err != nil {
 		panic(err)
@@ -98,11 +99,13 @@ func NewStore(config *config.Config) (*Store, error) {
 		store.MasterPort = config.MasterPort
 	}
 
+	store.Directory, err = volume.NewLeveldbDirectory(config.StoreDir)
+
 	store.ApiServer = http.NewServeMux()
 
 	store.ApiServer.HandleFunc("/add_volume", store.AddVolume)
 	store.ApiServer.HandleFunc("/get", store.Get)
-	store.ApiServer.HandleFunc("/getNeedle", store.GetNeedle)
+	//store.ApiServer.HandleFunc("/getNeedle", store.GetNeedle)
 	store.ApiServer.HandleFunc("/put", store.Put)
 	store.ApiServer.HandleFunc("/del", store.Del)
 
@@ -119,9 +122,7 @@ func (store *Store) Start() {
 }
 
 func (store *Store) Close() {
-	for _, v := range store.Volumes {
-		v.Directory.Close()
-	}
+	store.Directory.Close()
 }
 
 func (store *Store) HeartBeat() {
@@ -134,7 +135,7 @@ func (store *Store) HeartBeat() {
 		ss.ApiHost = store.ApiHost
 		ss.ApiPort = store.ApiPort
 		ss.VStatusList = make([]*master.VolumeStatus, 0, len(store.Volumes))
-		
+
 		diskUsage, _ := disk.DiskUsage(store.StoreDir)
 		ss.DiskFree = diskUsage.Free
 		ss.DiskSize = diskUsage.Size
@@ -167,5 +168,3 @@ func (store *Store) HeartBeat() {
 		<- tick.C
 	}
 }
-
-

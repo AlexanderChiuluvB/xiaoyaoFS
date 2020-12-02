@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -24,7 +23,7 @@ type Volume struct {
 	CurrentOffset uint64 //当前最新文件所在的offset
 	Path          string
 	File          *os.File // Volume File 用一个Byte来存储当前的Offset
-	Directory     Directory
+	//Directory     Directory
 	rwlock        sync.RWMutex
 	Writeable     bool
 }
@@ -41,10 +40,10 @@ func NewVolume(vid uint64, dir string) (v *Volume, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("open file :%v", err)
 	}
-	v.Directory, err = NewLeveldbDirectory(dir, vid)
-	if err != nil {
-		return nil, fmt.Errorf("new leveldb directory :%v", err)
-	}
+	//v.Directory, err = NewLeveldbDirectory(dir, vid)
+	//if err != nil {
+		//return nil, fmt.Errorf("new leveldb directory :%v", err)
+	//}
 	//defer v.Directory.Close()
 	v.rwlock = sync.RWMutex{}
 	v.MaxSize = MaxVolumeSize
@@ -65,6 +64,7 @@ func NewVolume(vid uint64, dir string) (v *Volume, err error) {
 	return v, nil
 }
 
+/*
 func (v *Volume) GetNeedle(id uint64) (needle *Needle, err error) {
 	//v.rwlock.RLock()
 	//defer v.rwlock.RUnlock()
@@ -75,8 +75,11 @@ func (v *Volume) GetNeedle(id uint64) (needle *Needle, err error) {
 	needle.File = v.File
 	return
 }
+*/
+
 
 //删除needle的时候只是简单删除了db的metadata,并没有删除volume上的needle的真实数据
+/*
 func (v *Volume) DelNeedle(id uint64) (err error) {
 	v.rwlock.Lock()
 	defer v.rwlock.Unlock()
@@ -86,7 +89,8 @@ func (v *Volume) DelNeedle(id uint64) (err error) {
 	}
 	return v.Directory.Del(id)
 }
-
+*/
+/*
 func (v *Volume) GetNeedleBytes(id uint64) (data []byte, filename string, err error) {
 	needle, err := v.Directory.Get(id)
 	if err != nil {
@@ -99,6 +103,7 @@ func (v *Volume) GetNeedleBytes(id uint64) (data []byte, filename string, err er
 	}
 	return
 }
+*/
 
 func (v *Volume) SetCurrentIndex(currentIndex uint64) (err error) {
 	v.CurrentOffset = currentIndex
@@ -163,7 +168,7 @@ func (v *Volume) NewNeedle(id uint64, fileName string, fileSize uint64) (n *Need
 	}
 
 	// 在Directory层增加needle的meta
-	err = v.Directory.New(n)
+	//err = v.Directory.New(n)
 	return n, err
 }
 

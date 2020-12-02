@@ -1,7 +1,6 @@
 package config
 
 import (
-	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/cacheUtils"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/time"
 	"github.com/BurntSushi/toml"
 	"io/ioutil"
@@ -18,6 +17,8 @@ type Config struct {
 	MasterPort int
 
 	MountDir string
+
+	// master meta type
 	MetaType string
 
 	//Redis
@@ -33,9 +34,13 @@ type Config struct {
 	CassandraHosts []string
 	Keyspace       string
 
-	Mc           *cacheUtils.Config
-	ExpireMc     time.Duration
-	MaxVolumeNum int
+	// ClickHouse
+	ClickHouseHost string
+
+	ExpireTime       time.Duration
+	PurgeTime        time.Duration
+	MaxVolumeNum     int
+
 }
 
 // NewConfig new a config.

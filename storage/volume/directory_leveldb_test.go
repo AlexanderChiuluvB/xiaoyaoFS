@@ -25,7 +25,7 @@ func TestLeveldbDirectory_leveldb(t *testing.T) {
 
 func TestLeveldbDirectory(t *testing.T) {
 	os.RemoveAll("~/alex1")
-	d, err := NewLeveldbDirectory("~/alex1", 1)
+	d, err := NewLeveldbDirectory("~/alex1")
 	assert.NoError(t, err)
 	iter := d.db.NewIterator(nil, nil)
 	for iter.Next() {

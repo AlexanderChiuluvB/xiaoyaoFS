@@ -1,25 +1,22 @@
+StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/masterDir"
+
 MasterHost = "localhost"
 MasterPort = 8888
-MetaType = "Redis"
-CassandraHosts = ["localhost"]
-HbaseHost = "localhost"
+
+MetaType = "ClickHouse"
+
+# 缓存超时时间 5min
+ExpireTime = "5m"
+# 清除超时数据的周期 10min
+PurgeTime = "10m"
+
+# ClickHouse
+ClickHouseHost = "tcp://127.0.0.1:9000?debug=true"
 
 # redis
 RedisHost = "localhost"
 RedisPort = 6379
-Password = "110120"
+#Password = "110120"
 Database = 0
 
 MaxVolumeNum = 5
-
-ExpireMc = "10m"
-[Mc]
-name = "xiaoyaofs"
-proto = "tcp"
-addr = "localhost:11211"
-idle = 5
-active = 10
-dialTimeout = "1s"
-readTimeout = "1s"
-writeTimeout = "1s"
-idleTimeout = "80s"

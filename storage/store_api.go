@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage/volume"
 	"io"
@@ -37,17 +35,13 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("strconv.ParseInt(\"%s\") error(%v)", r.FormValue("fid"), err), http.StatusBadRequest)
 		return
 	}
-	v := s.Volumes[vid]
-	if v == nil {
-		http.Error(w, "can't find volume", http.StatusNotFound)
-		return
-	}
 
-	n, err := v.GetNeedle(fid)
+	n, err := s.Directory.Get(vid, fid)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Get Needle of fid %d of volume vid %d error %v", fid, vid, err), http.StatusBadRequest)
 		return
 	}
+	n.File = s.Volumes[vid].File
 
 	w.Header().Set("Content-Type", get_content_type(n.FileName))
 	w.Header().Set("Accept-Ranges", "bytes")
@@ -71,6 +65,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+/*
 func (s *Store) GetNeedle(w http.ResponseWriter, r *http.Request){
 	var (
 		err              error
@@ -130,6 +125,7 @@ func (s *Store) GetNeedle(w http.ResponseWriter, r *http.Request){
 		}
 	}
 }
+*/
 
 func (s *Store) Put(w http.ResponseWriter, r *http.Request) {
 	var (
@@ -171,7 +167,13 @@ func (s *Store) Put(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = v.NewFile(fid, &data, header.Filename)
+	needle, err := v.NewFile(fid, &data, header.Filename)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = s.Directory.Set(vid, fid, needle)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -184,7 +186,6 @@ func (s *Store) Del(w http.ResponseWriter, r *http.Request) {
 	var (
 		err      error
 		fid, vid uint64
-		v        *volume.Volume
 	)
 	if r.Method != http.MethodDelete {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -195,18 +196,12 @@ func (s *Store) Del(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	v = s.Volumes[vid]
-	if v == nil {
-		http.Error(w, "can't find volume", http.StatusNotFound)
-		return
-	}
-
 	if fid, err = strconv.ParseUint(r.FormValue("fid"), 10, 64); err != nil {
 		http.Error(w, fmt.Sprintf("strconv.ParseInt(\"%s\") error(%v)", r.FormValue("vid"), err), http.StatusNotFound)
 		return
 	}
 
-	err = v.DelNeedle(fid)
+	err = s.Directory.Del(vid, fid)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

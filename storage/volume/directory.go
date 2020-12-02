@@ -1,11 +1,10 @@
 package volume
 
 type Directory interface {
-	Get(id uint64) (n *Needle, err error)
-	New(n *Needle) (err error)
-	Has(id uint64) (has bool)
-	Del(id uint64) (err error)
-	Set(id uint64, n *Needle) (err error)
+	Get(vid, nid uint64) (n *Needle, err error)
+	Has(vid, nid uint64) (has bool)
+	Del(vid, nid uint64) (err error)
+	Set(vid, nid uint64, n *Needle) (err error)
 	Iter() (iter Iterator)
 	Close()
 }
