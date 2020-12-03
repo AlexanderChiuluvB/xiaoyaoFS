@@ -52,7 +52,10 @@ func NewMaster(config *config.Config) (*Master, error){
 			panic(fmt.Errorf("NewClickHouse error %v", err))
 		}
 	}
-	m.Cache = newMetaCache(config)
+	m.Cache, err = newMetaCache(config)
+	if err != nil {
+		panic(err)
+	}
 	if config.MasterHost == "" {
 		m.MasterHost = "localhost"
 	} else {
