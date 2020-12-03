@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/uuid"
-	gocache "github.com/patrickmn/go-cache"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -46,7 +45,7 @@ func (m *Master) getFile(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
 			return
 		}
-		m.Cache.c.Set(filePath, &MetaID{NID: nid, VID: vid}, gocache.DefaultExpiration)
+		m.Cache.c.Set(filePath, &MetaID{NID: nid, VID: vid}, 1)
 	}
 
 	if vid != 0 && nid != 0 {
@@ -169,7 +168,7 @@ func (m *Master) uploadFile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errStr, http.StatusInternalServerError)
 		return
 	} else {
-		m.Cache.c.Set(filePath, &MetaID{NID: nid, VID: vid}, gocache.DefaultExpiration)
+		m.Cache.c.Set(filePath, &MetaID{NID: nid, VID: vid}, 1)
 		err = m.Metadata.Set(filePath, vid, nid)
 		if err != nil {
 			http.Error(w, "m.Metadata.Set: " + err.Error(), http.StatusInternalServerError)
@@ -225,7 +224,7 @@ func (m *Master) deleteFile(w http.ResponseWriter, r *http.Request) {
 		wg.Wait()
 
 		//TODO: delMeta if exists
-		m.Cache.c.Delete(filePath)
+		m.Cache.c.Del(filePath)
 		err = m.Metadata.Delete(filePath)
 		if err != nil {
 			deleteErr = append(deleteErr, fmt.Errorf("m.Metadata.Delete(%s) %s", r.FormValue("filepath"), err.Error()))

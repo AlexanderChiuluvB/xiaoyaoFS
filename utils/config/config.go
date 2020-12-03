@@ -46,6 +46,10 @@ type Config struct {
 	PurgeTime        time.Duration
 	MaxVolumeNum     int
 
+	//Cache config
+	NumCounters int64
+	MaxCost     int64
+	BufferItem  int64
 }
 
 // NewConfig new a config.

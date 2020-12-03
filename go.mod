@@ -8,6 +8,7 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dgraph-io/ristretto v0.0.3
 	github.com/gocql/gocql v0.0.0-20201024154641-5913df4d474e
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
