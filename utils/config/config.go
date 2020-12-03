@@ -37,10 +37,14 @@ type Config struct {
 	// ClickHouse
 	ClickHouseHost string
 
-	ExpireTime       time.Duration
-	PurgeTime        time.Duration
-	MaxVolumeNum     int
+	ExpireTime   time.Duration
+	PurgeTime    time.Duration
+	MaxVolumeNum int
 
+	//Cache config
+	NumCounters int64
+	MaxCost     int64
+	BufferItem  int64
 }
 
 // NewConfig new a config.
