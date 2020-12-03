@@ -46,6 +46,7 @@ func (m *Master) getFile(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
 			return
 		}
+		m.Cache.c.Set(filePath, &MetaID{NID: nid, VID: vid}, gocache.DefaultExpiration)
 	}
 
 	if vid != 0 && nid != 0 {

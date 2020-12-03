@@ -12,3 +12,10 @@ ClickHouseHost = "tcp://127.0.0.1:9000?debug=true"
 CassandraHosts = ["localhost"]
 Keyspace = "store1"
 
+# LevelDB
+# 8MB
+BlockCacheCapacity = 8388608
+# 4MB
+WriteBuffer = 4194304
+CompactionTableSizeMultiplier = 4.0
+

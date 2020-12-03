@@ -99,7 +99,7 @@ func NewStore(config *config.Config) (*Store, error) {
 		store.MasterPort = config.MasterPort
 	}
 
-	store.Directory, err = volume.NewLeveldbDirectory(config.StoreDir)
+	store.Directory, err = volume.NewLeveldbDirectory(config)
 
 	store.ApiServer = http.NewServeMux()
 

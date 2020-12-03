@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/syndtr/goleveldb/leveldb"
-	"os"
 	"testing"
-	"unsafe"
 )
 
 func TestLeveldbDirectory_leveldb(t *testing.T) {
@@ -23,6 +21,7 @@ func TestLeveldbDirectory_leveldb(t *testing.T) {
 	assert.Equal(t, value, string(v))
 }
 
+/*
 func TestLeveldbDirectory(t *testing.T) {
 	os.RemoveAll("~/alex1")
 	d, err := NewLeveldbDirectory("~/alex1")
@@ -63,7 +62,7 @@ func TestLeveldbDirectory(t *testing.T) {
 	newExists := d.Has(id)
 	assert.False(t, newExists)
 }
-
+*/
 /*
 func TestLeveldbDirectory_Iter(t *testing.T) {
 	v, err  := NewVolume(1, "/tmp/iter")

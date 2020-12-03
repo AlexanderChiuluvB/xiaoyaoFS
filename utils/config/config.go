@@ -37,6 +37,11 @@ type Config struct {
 	// ClickHouse
 	ClickHouseHost string
 
+	// LevelDB
+	BlockCacheCapacity int
+	WriteBuffer        int
+	CompactionTableSizeMultiplier float64
+
 	ExpireTime       time.Duration
 	PurgeTime        time.Duration
 	MaxVolumeNum     int
