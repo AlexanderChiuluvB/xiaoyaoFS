@@ -14,9 +14,11 @@ RedisPort = 6379
 #Password = "110120"
 Database = 0
 
+# MAX Default volume number
 MaxVolumeNum = 5
 
 # cache
+# doc: https://github.com/dgraph-io/ristretto
 # number of keys to track frequency of (10M).
 NumCounters = 10000000
 # maximum cost of cache (1GB).

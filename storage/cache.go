@@ -1,35 +1,30 @@
 package storage
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage/volume"
-	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/cacheUtils"
-	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/cacheUtils/gomemcache/memcache"
+	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/config"
+	"github.com/dgraph-io/ristretto"
 	"strconv"
-	"time"
 )
 
 type NeedleCache struct {
-	mc     *cacheUtils.Pool
-	expire int32
+	c *ristretto.Cache
 }
 
-// New new cache instance.
-func New(c *cacheUtils.Config, expire time.Duration) (cache *NeedleCache) {
-	cache = &NeedleCache{}
-	cache.expire = int32(time.Duration(expire) / time.Second)
-	cache.mc = cacheUtils.NewPool(c)
-	return
-}
-
-// Ping check cacheUtils health
-func (c *NeedleCache) Ping() (err error) {
-	conn := c.mc.Get()
-	err = conn.Store("set", "ping", []byte{1}, 0, c.expire, 0)
-	conn.Close()
-	return
+func newNeedleCache(config *config.Config) (*NeedleCache, error) {
+	metaCache := new(NeedleCache)
+	var err error
+	metaCache.c, err = ristretto.NewCache(&ristretto.Config{
+		NumCounters: config.NumCounters,     // number of keys to track frequency of (10M).
+		MaxCost:     config.MaxCost, // maximum cost of cache (1GB).
+		BufferItems: config.BufferItem,      // number of keys per Get buffer.
+	})
+	if err != nil {
+		return nil, err
+	}
+	return metaCache, nil
 }
 
 func NeedleKey(vid, nid uint64) string {
@@ -40,67 +35,27 @@ func FileKey(vid, nid uint64) string {
 	return fmt.Sprintf("f/%s/%s", strconv.FormatUint(vid, 10), strconv.FormatUint(nid, 10))
 }
 
-func (c *NeedleCache) GetNeedle(vid, nid uint64) (n *volume.Needle, err error) {
-	var (
-		bs  []byte
-		key = NeedleKey(vid, nid)
-	)
-	bs, err = c.get(key)
-	if err != nil {
-		if err == memcache.ErrNotFound {
-			err = nil
-			return
-		}
-		return
+func (n *NeedleCache) GetNeedle(vid, nid uint64) (needle *volume.Needle, err error) {
+	if data, found := n.c.Get(NeedleKey(vid, nid)); found {
+		return volume.UnMarshalBinary(data.([]byte))
+	} else {
+		return nil, nil
 	}
-	n = new(volume.Needle)
-	if err = json.Unmarshal(bs, n); err != nil {
-		return nil, errors.New(fmt.Sprintf("cache Meta.Unmarshal(%d.%d) error(%v)", vid, nid, err))
-	}
-	return
 }
 
-func (c *NeedleCache) SetNeedle(vid, nid uint64, n *volume.Needle) (err error) {
+func (n *NeedleCache) SetNeedle(vid, nid uint64, needle *volume.Needle) (err error) {
 	key := NeedleKey(vid, nid)
-	bs, err := json.Marshal(n)
+	data, err := volume.MarshalBinary(needle)
 	if err != nil {
-		return errors.New(fmt.Sprintf("cache setMeta() Marshal(%s) error(%v)", bs, err))
+		return errors.New(fmt.Sprintf("cache setNeedle Marshal error(%v)", err))
 	}
-	if err = c.set(key, bs, c.expire); err != nil {
-		return errors.New(fmt.Sprintf("cache setMeta() set(%s,%s) error(%v)", key, string(bs), err))
-	}
-
+	n.c.Set(key, data, 1)
 	return
 }
 
 // DelMeta del meta from cache.
-func (c *NeedleCache) DelNeedle(vid, nid uint64) (err error) {
+func (n *NeedleCache) DelNeedle(vid, nid uint64) (err error) {
 	key := NeedleKey(vid, nid)
-	if err = c.del(key); err != nil {
-		return errors.New(fmt.Sprintf("cache DelMeta(%s) error(%v)", key, err))
-	}
-	return
-}
-
-func (c *NeedleCache) set(key string, bs []byte, expire int32) (err error) {
-	conn := c.mc.Get()
-	defer conn.Close()
-	return conn.Store("set", key, bs, 0, expire, 0)
-}
-
-func (c *NeedleCache) get(key string) (bs []byte, err error) {
-	var (
-		conn = c.mc.Get()
-	)
-	defer conn.Close()
-	if bs, err = conn.Get2("get", key); err != nil {
-		return
-	}
-	return
-}
-
-func (c *NeedleCache) del(key string) (err error) {
-	conn := c.mc.Get()
-	defer conn.Close()
-	return conn.Delete(key)
+	n.c.Del(key)
+	return nil
 }

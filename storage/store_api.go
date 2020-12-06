@@ -36,11 +36,24 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	n, err := s.Directory.Get(vid, fid)
+	n, err := s.Cache.GetNeedle(vid, fid)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Get Needle of fid %d of volume vid %d error %v", fid, vid, err), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Get Cache Needle of fid %d of volume vid %d error %v", fid, vid, err), http.StatusBadRequest)
 		return
 	}
+	if n == nil {
+		n, err = s.Directory.Get(vid, fid)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Get Needle of fid %d of volume vid %d error %v", fid, vid, err), http.StatusBadRequest)
+			return
+		}
+		err = s.Cache.SetNeedle(vid, fid, n)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Set Needle of fid %d of volume vid %d error %v", fid, vid, err), http.StatusBadRequest)
+			return
+		}
+	}
+
 	n.File = s.Volumes[vid].File
 
 	w.Header().Set("Content-Type", get_content_type(n.FileName))
@@ -179,6 +192,12 @@ func (s *Store) Put(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = s.Cache.SetNeedle(vid, fid, needle)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -205,6 +224,7 @@ func (s *Store) Del(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	s.Cache.DelNeedle(vid, fid)
 }
 
 

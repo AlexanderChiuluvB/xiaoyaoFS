@@ -18,6 +18,7 @@ func NewLeveldbDirectory(config *config.Config) (d *LeveldbDirectory, err error)
 	d = new(LeveldbDirectory)
 	d.path = filepath.Join(config.StoreDir, "index")
 	opts := &opt.Options{
+		//Filter: filter.NewBloomFilter(10),
 		BlockCacheCapacity:            config.BlockCacheCapacity, // default value is 8MiB
 		WriteBuffer:                   config.WriteBuffer, // default value is 4MiB
 		CompactionTableSizeMultiplier: config.CompactionTableSizeMultiplier,

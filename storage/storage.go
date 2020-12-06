@@ -100,7 +100,13 @@ func NewStore(config *config.Config) (*Store, error) {
 	}
 
 	store.Directory, err = volume.NewLeveldbDirectory(config)
-
+	if err != nil {
+		return nil, err
+	}
+	store.Cache, err = newNeedleCache(config)
+	if err != nil {
+		return nil, err
+	}
 	store.ApiServer = http.NewServeMux()
 
 	store.ApiServer.HandleFunc("/add_volume", store.AddVolume)

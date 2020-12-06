@@ -13,9 +13,16 @@ CassandraHosts = ["localhost"]
 Keyspace = "store1"
 
 # LevelDB
+# doc:
 # 8MB
-BlockCacheCapacity = 8388608
+BlockCacheCapacity = 16388608
 # 4MB
-WriteBuffer = 4194304
+WriteBuffer = 8194304
 CompactionTableSizeMultiplier = 4.0
+
+NumCounters = 10000000
+# maximum cost of cache (1GB).
+MaxCost = 1073741824
+# number of keys per Get buffer.
+BufferItem = 64
 
