@@ -41,7 +41,7 @@ curl -X DELETE 'http://localhost:8888/deleteFile?filepath=/Users/alex/go/src/git
 
 单个LevelDB维护整个Storage Server所有Volume对应的Key value关系
 
-Master Server 用Redis/LevelDB 存储 <FileName, <Vid,Nid>> 的映射关系
+Master Server 用ClickHouse/LevelDB 存储 <FileName, <Vid,Nid>> 的映射关系
 
 Storage Server 用LevelDB 存储<<Vid,Nid>, Needle> 的映射关系
 
