@@ -1,9 +1,9 @@
-StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/masterDir"
+StoreDir = "~/Desktop/Damon/master"
 
 MasterHost = "localhost"
 MasterPort = 8888
 
-MetaType = "ClickHouse"
+MetaType = "LevelDB"
 
 # ClickHouse
 ClickHouseHost = "tcp://127.0.0.1:9000?debug=true"

@@ -1,11 +1,11 @@
-StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/storeDir1"
+StoreDir = "~/Desktop/Damon/storage"
 
 StoreApiHost = "localhost"
 StoreApiPort = 7900
 MasterHost = "localhost"
 MasterPort = 8888
 
-MountDir = "/Users/alex/mountTest1"
+MountDir = "~/Desktop/Damon/mount"
 
 ClickHouseHost = "tcp://127.0.0.1:9000?debug=true"
 
