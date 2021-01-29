@@ -24,7 +24,7 @@ curl -F file=@localFilePath  'http://localhost:8888/uploadFile?filepath=/example
 
 获取
 ```
-wget 'http://localhost:8888/getFile?filepath=/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/test/nut.png'
+wget -O  localPath.jpg  'http://localhost:8888/getFile?filepath=/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/test/nut.png'
 ```
 
 删除metadata(不会删除Volume中的真实数据)
@@ -55,6 +55,8 @@ MasterHost = "localhost"
 MasterPort = 8888
 
 MetaType = "ClickHouse"
+
+# Or: MetaType = "LevelDB"
 
 # 缓存超时时间 5min
 ExpireTime = "5m"
