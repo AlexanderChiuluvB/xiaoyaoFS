@@ -14,7 +14,7 @@ storage server多副本一致性问题
 
 #### main 分支
 
-建议生产上使用该分支，并且Master 默认使用 ClickHouse 存储映射关系
+建议生产上使用该分支，并且Master 默认使用 LevelDB 存储映射关系
 
 单个LevelDB维护整个Storage Server所有Volume对应的Key value关系
 
