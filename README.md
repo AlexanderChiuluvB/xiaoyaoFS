@@ -3,34 +3,11 @@
 
 ## 开发记录
 
-### TODO 2020/11/15
+### TODO
 
-1.storage server多副本一致性问题
+storage server多副本一致性问题
 
-
-2.storage server/master server的缓存机制
-
-
-3.FUSE的目录实现，缓存机制
-
-### TODO 2020/12/1
-### API 使用
-
-
-上传 
-```
-curl -F file=@localFilePath  'http://localhost:8888/uploadFile?filepath=/example.png'
-```
-
-获取
-```
-wget -O  localPath.jpg  'http://localhost:8888/getFile?filepath=/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/test/nut.png'
-```
-
-删除metadata(不会删除Volume中的真实数据)
-```
-curl -X DELETE 'http://localhost:8888/deleteFile?filepath=/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/test/nut.png'
-```
+删除文件的时候只删除metadata，不删除volume的数据
 
 
 ### 分支说明
@@ -49,19 +26,15 @@ Storage Server 用LevelDB 存储<<Vid,Nid>, Needle> 的映射关系
 master.toml 
 
 ```
-StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/masterDir"
-
 MasterHost = "localhost"
 MasterPort = 8888
 
-MetaType = "ClickHouse"
+MetaType = "LevelDB"
 
-# Or: MetaType = "LevelDB"
+# MetaType支持“ClickHouse”,"Redis","LevelDB"
 
-# 缓存超时时间 5min
-ExpireTime = "5m"
-# 清除超时数据的周期 10min
-PurgeTime = "10m"
+# LevelDB 相关文件的存储路径
+StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/masterDir"
 
 # ClickHouse
 ClickHouseHost = "tcp://127.0.0.1:9000?debug=true"
@@ -72,12 +45,21 @@ RedisPort = 6379
 #Password = "110120"
 Database = 0
 
+
+# 缓存超时时间 5min
+ExpireTime = "5m"
+# 清除超时数据的周期 10min
+PurgeTime = "10m"
+
+
 MaxVolumeNum = 5
 
 ```
 storage.toml
 
 ```
+
+#LevelDB相关路径的存储
 StoreDir = "/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/storeDir1"
 
 StoreApiHost = "localhost"
@@ -88,7 +70,7 @@ MasterPort = 8888
 MountDir = "/Users/alex/mountTest1"
 ```
 
-docker 启动 单节点ClickHouse
+如果要使用clickhouse。可以docker 启动 单节点ClickHouse
 ```
 cd db/clickhouse
 docker-compose up -d
@@ -98,6 +80,7 @@ docker-compose up -d
 ```
 docker run -p 6379:6379 -d redis:latest redis-server
 ```
+
 
 单Master单Storage启动方法
 ```
@@ -113,10 +96,11 @@ docker run -p 6379:6379 -d redis:latest redis-server
 ```
 注意store1.toml和store2.toml的storeDir挂载路径和StoreApiHost,StoreApiPort都应该做相应调整。
 
+
 ### 挂载
 
 切换到FUSE 分支。FUSE 分支支持在Master Server使用Redis/Hbase/Cassandra/ClickHouse存储metadata。默认使用redis
-但是Redis重启后所有数据将丢失，不能持久化。所以开发计划是默认用clickhouse
+但是Redis重启后所有数据将丢失，不能持久化。所以开发计划是默认用clickhouse/LevelDB
 
 挂载到某文件夹
 具体文件夹路径在配置文件中设置MountDir = "/Users/alex/mountTest1"
@@ -136,20 +120,21 @@ curl -F file=@localFilePath  'http://localhost:8888/uploadFile?filepath=/Users/a
 
 那么首先要手动在mountTest1文件夹创建testdir文件夹
 
-### 其他开发分支
+### API 使用
 
-#### clickhouse_no_entry
 
-在db/clickhouse 中,`docker compose up -d`启动一个单节点ClickHouse做测试
+上传 
+```
+curl -F file=@localFilePath  'http://localhost:8888/uploadFile?filepath=/example.png'
+```
 
-storage Server使用ClickHouse维护<<Vid,Nid>, Needle> 的映射关系
+获取
+```
+wget -O  localPath.jpg  'http://localhost:8888/getFile?filepath=/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/test/nut.png'
+```
 
-#### cassandra_no_entry
-在db/cassandra中，用,`docker compose up -d`启动一个双节点集群，并且参照README.md创建表
-
-storage Server使用Cassandra维护<<Vid,Nid>, Needle> 的映射关系
-
-#### badger_one_storage_no_entry
-
-master Server/storage Server使用Badger维护<<Vid,Nid>, Needle> 的映射关系
+删除metadata(不会删除Volume中的真实数据)
+```
+curl -X DELETE 'http://localhost:8888/deleteFile?filepath=/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/test/nut.png'
+```
 
