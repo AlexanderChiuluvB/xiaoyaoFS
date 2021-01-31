@@ -6,10 +6,12 @@ import (
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/master"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 func Get(host string, port int, filePath string) ([]byte, error) {
 
+	filePath = strings.ReplaceAll(filePath, " ", "")
 	resp, err := http.Get(fmt.Sprintf("http://%s:%d/getFile?filepath=%s", host,
 		port, filePath))
 	if err != nil {
@@ -26,7 +28,7 @@ func Get(host string, port int, filePath string) ([]byte, error) {
 }
 
 func GetEntry(host string, port int, filePath string) (entry *master.Entry, err error) {
-
+	filePath = strings.ReplaceAll(filePath, " ", "")
 	resp, err := http.Get(fmt.Sprintf("http://%s:%d/getEntry?filepath=%s", host,
 		port, filePath))
 	if err != nil {
@@ -51,6 +53,7 @@ func GetEntry(host string, port int, filePath string) (entry *master.Entry, err 
 }
 
 func GetEntries(host string, port int, filePathPrefix string) (entries []*master.Entry, err error) {
+	filePathPrefix = strings.ReplaceAll(filePathPrefix, " ", "")
 	resp, err := http.Get(fmt.Sprintf("http://%s:%d/getEntries?prefix=%s", host,
 		port, filePathPrefix))
 	if err != nil {

@@ -33,7 +33,7 @@ func (m *Master) getFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	filePath := r.FormValue("filepath")
-	filePath = strings.TrimSpace(filePath)
+	filePath = strings.ReplaceAll(filePath, " ", "")
 	var vid,nid uint64
 	var err error
 
@@ -121,7 +121,7 @@ func (m *Master) uploadFile(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	filePath := r.FormValue("filepath")
-	filePath = strings.TrimSpace(filePath)
+	filePath = strings.ReplaceAll(filePath, " ", "")
 	fileName := filepath.Base(filePath)
 
 	var fileSize int64
@@ -187,7 +187,7 @@ func (m *Master) deleteFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	filePath := r.FormValue("filepath")
-	filePath = strings.TrimSpace(filePath)
+	filePath = strings.ReplaceAll(filePath, " ", "")
 	vid, nid, err := m.Metadata.Get(filePath)
 	if err != nil {
 		http.NotFound(w, r)

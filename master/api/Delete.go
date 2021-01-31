@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
-func Delete(host string, port int, filepath string) error {
+func Delete(host string, port int, filePath string) error {
+	filePath = strings.ReplaceAll(filePath, " ", "")
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("http://%s:%d/deleteFile?filepath=%s",
-		host, port, filepath), nil)
+		host, port, filePath), nil)
 	if err != nil {
 		return err
 	}

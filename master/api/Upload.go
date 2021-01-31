@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func Upload(host string, port int, dstFilePath, srcFilePath string) error {
@@ -35,6 +36,7 @@ func Upload(host string, port int, dstFilePath, srcFilePath string) error {
 	}
 
 	mPart.Close()
+	dstFilePath = strings.ReplaceAll(dstFilePath, " ", "")
 	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s:%d/uploadFile?filepath=%s",
 		host, port, dstFilePath), body)
 	if err != nil {
