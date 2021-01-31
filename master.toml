@@ -1,4 +1,4 @@
-StoreDir = "~/Desktop/Damon/master"
+StoreDir = "~/data/master"
 
 MasterHost = "localhost"
 MasterPort = 8888

@@ -39,7 +39,7 @@ func Benchmark(masterHost string, masterPort int, concurrent int, num int, size 
 
 	dataMd5 := md5.Sum(randBytes)
 
-	testFile, _ := ioutil.TempFile("/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/test", "")
+	testFile, _ := ioutil.TempFile("../testFile", "")
 	testFile.Truncate(int64(size))
 	io.Copy(testFile, bytes.NewReader(randBytes))
 	testFile.Close()

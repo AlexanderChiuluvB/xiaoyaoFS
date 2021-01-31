@@ -1,4 +1,4 @@
-StoreDir = "~/Desktop/Damon/storage"
+StoreDir = "~/data/store1"
 
 StoreApiHost = "localhost"
 StoreApiPort = 7900
