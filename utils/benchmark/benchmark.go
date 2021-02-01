@@ -26,7 +26,7 @@ type result struct {
 
 func main() {
 	const concurrent = 16
-	const num = 1000
+	const num = 5000
 	const size = 1024000
 	const masterHost = "localhost"
 	const masterPort = 8888

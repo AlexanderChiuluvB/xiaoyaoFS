@@ -5,6 +5,10 @@ MasterPort = 8888
 
 MetaType = "ClickHouse"
 
+# Cassandra
+CassandraHosts = ["localhost"]
+Keyspace = "master"
+
 # ClickHouse
 ClickHouseHost = "tcp://127.0.0.1:9000?debug=true"
 

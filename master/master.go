@@ -51,6 +51,11 @@ func NewMaster(config *config.Config) (*Master, error){
 		if err != nil {
 			panic(fmt.Errorf("NewClickHouse error %v", err))
 		}
+	case "Cassandra":
+		m.Metadata, err = NewCassandraMetaStore(config)
+		if err != nil {
+			panic(fmt.Errorf("NewCassandra error %v", err))
+		}
 	}
 	m.Cache, err = newMetaCache(config)
 	if err != nil {
