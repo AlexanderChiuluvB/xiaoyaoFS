@@ -43,7 +43,7 @@ func (c *MetadataCassandra) Get(filePath string) (vid, nid uint64, err error) {
 		nid uint64
 	}
 	if err := c.session.Query("SELECT vid,nid FROM metadata WHERE filePath = ?", filePath).Consistency(gocql.One).Scan(&result);err!=nil{
-		return -1,-1, err
+		return 0,0, err
 	}
 	return result.vid, result.nid, nil
 }

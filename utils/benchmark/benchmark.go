@@ -1,4 +1,4 @@
-package main
+package benchmark
 
 import (
 	"bytes"
@@ -24,10 +24,8 @@ type result struct {
 	transferred uint64
 }
 
-func main() {
+func Benchmark(host string, port int, concurrency int, num int, size int) {
 	const concurrent = 16
-	const num = 5000
-	const size = 1024000
 	const masterHost = "localhost"
 	const masterPort = 8888
 	uploadResult := &result{
@@ -82,7 +80,7 @@ func main() {
 	fmt.Printf("time taken:             %.2f seconds\n", timeTaken)
 	fmt.Printf("completed:              %d\n", uploadResult.completed)
 	fmt.Printf("failed:                 %d\n", uploadResult.failed)
-	fmt.Printf("transferred:            %d byte\n", uploadResult.completed * size)
+	fmt.Printf("transferred:            %d byte\n", uploadResult.completed * int32(size))
 	fmt.Printf("request per second:     %.2f\n", float64(uploadResult.num) / timeTaken)
 	fmt.Printf("transferred per second: %.2f MB \n", float64(uploadResult.completed) * float64(size) / timeTaken/1024/1024)
 
@@ -125,7 +123,7 @@ func main() {
 	fmt.Printf("time taken:             %.2f seconds\n", timeTaken)
 	fmt.Printf("completed:              %d\n", readResult.completed)
 	fmt.Printf("failed:                 %d\n", readResult.failed)
-	fmt.Printf("transferred:            %d byte\n", readResult.completed * size)
+	fmt.Printf("transferred:            %d byte\n", readResult.completed * int32(size))
 	fmt.Printf("request per second:     %.2f\n", float64(readResult.num) / timeTaken)
 	fmt.Printf("transferred per second: %.2f MB \n", float64(readResult.completed) * float64(size) / timeTaken / 1024 / 1024)
 
@@ -168,7 +166,7 @@ func main() {
 	fmt.Printf("time taken:             %.2f seconds\n", timeTaken)
 	fmt.Printf("completed:              %d\n", deleteResult.completed)
 	fmt.Printf("failed:                 %d\n", deleteResult.failed)
-	fmt.Printf("transferred:            %d byte\n", deleteResult.completed * size)
+	fmt.Printf("transferred:            %d byte\n", deleteResult.completed * int32(size))
 	fmt.Printf("request per second:     %.2f\n", float64(deleteResult.num) / timeTaken)
 	fmt.Printf("transferred per second: %.2f byte\n", float64(deleteResult.completed) * float64(size) / timeTaken)
 

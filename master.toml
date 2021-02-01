@@ -3,7 +3,7 @@ StoreDir = "/home/hadoop/data"
 MasterHost = "localhost"
 MasterPort = 8888
 
-MetaType = "ClickHouse"
+MetaType = "Cassandra"
 
 # Cassandra
 CassandraHosts = ["localhost"]
