@@ -1,4 +1,4 @@
-StoreDir = "~/data/store1"
+StoreDir = "/home/hadoop/data"
 
 StoreApiHost = "localhost"
 StoreApiPort = 7900

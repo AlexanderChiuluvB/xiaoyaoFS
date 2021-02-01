@@ -1,14 +1,16 @@
 package main
 
 import (
+	"bytes"
+	"crypto/md5"
 	"fmt"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/master/api"
-	"log"
+	"io"
+	"io/ioutil"
+	"math/rand"
 	"os"
-	"path/filepath"
-	"strings"
+	"strconv"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -23,140 +25,137 @@ type result struct {
 }
 
 func main() {
-	const CONCURRENCY = 16 //allowed
-	var totalSize int64
-	var uploadedSize int64
-	var readSize int64
-	var jpgList []string
-	sizeMap := make(map[string]int64)
-	//Open Directory, get all pic list
-	err := filepath.Walk("/home/hadoop/Downloads/Panorama", func (path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if strings.HasSuffix(path, "jpg") {
-			jpgList = append(jpgList, path)
-			totalSize += info.Size()
-			sizeMap[path] = info.Size()
-		}
-		return nil
-	})
-	if err != nil {
-		log.Println(err)
-	}
-
+	const concurrent = 16
+	const num = 1000
+	const size = 1024000
+	const masterHost = "localhost"
+	const masterPort = 8888
 	uploadResult := &result{
-		concurrent: CONCURRENCY,
+		concurrent: concurrent,
+		num: num,
 		startTime: time.Now(),
 	}
-
-	loop := make(chan string)
+	loop := make(chan int)
 	wg := sync.WaitGroup{}
+	mutex := sync.Mutex{}
 
-	for i:=0; i < uploadResult.concurrent; i ++ {
+	randBytes := make([]byte, size)
+	rand.Read(randBytes)
+
+	dataMd5 := md5.Sum(randBytes)
+
+	testFile, _ := ioutil.TempFile("/home/hadoop/data", "")
+	testFile.Truncate(int64(size))
+	io.Copy(testFile, bytes.NewReader(randBytes))
+	testFile.Close()
+	defer os.Remove(testFile.Name())
+
+	for i := 0; i < concurrent; i++ {
 		wg.Add(1)
 		go func() {
-			defer wg.Done()
-			for path := range loop {
-				err := api.Upload("localhost", 8888, path, path)
+			for b := range loop {
+				err := api.Upload(masterHost, masterPort, testFile.Name() + strconv.Itoa(b), testFile.Name())
+				mutex.Lock()
 				if err == nil {
-					atomic.AddInt32(&uploadResult.completed, 1)
-					uploadedSize += sizeMap[path]
+					uploadResult.completed += 1
 				} else {
-					atomic.AddInt32(&uploadResult.failed, 1)
-					fmt.Println("upload failed ", err.Error())
+					uploadResult.failed += 1
+					fmt.Println("write failed:", err.Error())
 				}
+				mutex.Unlock()
 			}
+			wg.Done()
 		}()
 	}
 
-	for _, path := range jpgList {
-		loop <- path
+	for i := 0; i < num; i++ {
+		loop <- i
 	}
-
 	close(loop)
+
 	wg.Wait()
 	uploadResult.endTime = time.Now()
 	timeTaken := float64(uploadResult.endTime.UnixNano() - uploadResult.startTime.UnixNano()) / float64(time.Second)
 
-	fmt.Printf("upload %d %dbyte file:\n\n", len(jpgList), totalSize)
+	fmt.Printf("upload %d %dbyte file:\n\n", uploadResult.num, size)
 	fmt.Printf("concurrent:             %d\n", uploadResult.concurrent)
 	fmt.Printf("time taken:             %.2f seconds\n", timeTaken)
 	fmt.Printf("completed:              %d\n", uploadResult.completed)
 	fmt.Printf("failed:                 %d\n", uploadResult.failed)
-	fmt.Printf("transferred:            %d byte\n", uploadedSize)
-	fmt.Printf("request per second:     %.2f\n", float64(uploadResult.completed) / timeTaken)
-	fmt.Printf("transferred per second: %.2f MB/s\n", float64(uploadedSize)/timeTaken/(1024*1024))
-
+	fmt.Printf("transferred:            %d byte\n", uploadResult.completed * size)
+	fmt.Printf("request per second:     %.2f\n", float64(uploadResult.num) / timeTaken)
+	fmt.Printf("transferred per second: %.2f MB \n", float64(uploadResult.completed) * float64(size) / timeTaken/1024/1024)
 
 	readResult := &result{
-		concurrent: CONCURRENCY,
+		concurrent: concurrent,
+		num: num,
 		startTime: time.Now(),
 	}
-	loop = make(chan string)
+	loop = make(chan int)
 
-	for i:=0; i < readResult.concurrent; i ++ {
+	for i := 0; i < concurrent; i++ {
 		wg.Add(1)
 		go func() {
-			defer wg.Done()
-			for path := range loop {
-				file, _ := os.Stat(path)
-				data, err := api.Get("localhost", 8888, path)
-				if err == nil && int64(len(data)) == file.Size() {
-					atomic.AddInt32(&readResult.completed, 1)
-					readSize += sizeMap[path]
+			for b := range loop {
+				data, err := api.Get(masterHost, masterPort, testFile.Name() + strconv.Itoa(b))
+				mutex.Lock()
+				if err == nil &&md5.Sum(data) == dataMd5 {
+					readResult.completed += 1
 				} else {
-					atomic.AddInt32(&readResult.failed, 1)
-					fmt.Println("Read failed ", err.Error())
+					readResult.failed += 1
+					fmt.Println("read failed:", err.Error())
 				}
+				mutex.Unlock()
 			}
+			wg.Done()
 		}()
 	}
-	for _, path := range jpgList {
-		loop <- path
-	}
 
+	for i := 0; i < num; i++ {
+		loop <- i
+	}
 	close(loop)
 	wg.Wait()
 
 	readResult.endTime = time.Now()
 	timeTaken = float64(readResult.endTime.UnixNano() - readResult.startTime.UnixNano()) / float64(time.Second)
 
-	fmt.Printf("read %d file, total %dbyte file:\n\n", len(jpgList), totalSize)
+	fmt.Printf("\n\nread %d %dbyte file:\n\n", readResult.num, size)
 	fmt.Printf("concurrent:             %d\n", readResult.concurrent)
 	fmt.Printf("time taken:             %.2f seconds\n", timeTaken)
 	fmt.Printf("completed:              %d\n", readResult.completed)
 	fmt.Printf("failed:                 %d\n", readResult.failed)
-	fmt.Printf("transferred:            %d byte\n", readSize)
+	fmt.Printf("transferred:            %d byte\n", readResult.completed * size)
 	fmt.Printf("request per second:     %.2f\n", float64(readResult.num) / timeTaken)
-	fmt.Printf("transferred per second: %.2f MB/s \n", float64(readSize)/timeTaken/(1024*1024))
-
+	fmt.Printf("transferred per second: %.2f MB \n", float64(readResult.completed) * float64(size) / timeTaken / 1024 / 1024)
 
 	deleteResult := &result{
-		concurrent: CONCURRENCY,
+		concurrent: concurrent,
+		num: num,
 		startTime: time.Now(),
 	}
-	loop = make(chan string)
+	loop = make(chan int)
 
-	for i:=0; i < deleteResult.concurrent; i ++ {
+	for i := 0; i < concurrent; i++ {
 		wg.Add(1)
 		go func() {
-			defer wg.Done()
-			for path := range loop {
-				err := api.Delete("localhost", 8888, path)
+			for b := range loop {
+				err := api.Delete(masterHost, masterPort, testFile.Name() + strconv.Itoa(b))
+				mutex.Lock()
 				if err == nil {
-					atomic.AddInt32(&deleteResult.completed, 1)
-					readSize += sizeMap[path]
+					deleteResult.completed += 1
 				} else {
-					atomic.AddInt32(&deleteResult.failed, 1)
-					fmt.Println("upload failed ", err.Error())
+					deleteResult.failed += 1
+					fmt.Println("delete failed:", err.Error())
 				}
+				mutex.Unlock()
 			}
+			wg.Done()
 		}()
 	}
 
-	for _, path := range jpgList {
-		loop <- path
+	for i := 0; i < num; i++ {
+		loop <- i
 	}
 	close(loop)
 	wg.Wait()
@@ -164,17 +163,13 @@ func main() {
 	deleteResult.endTime = time.Now()
 	timeTaken = float64(deleteResult.endTime.UnixNano() - deleteResult.startTime.UnixNano()) / float64(time.Second)
 
-	fmt.Printf("delete%d file:\n\n", len(jpgList))
+	fmt.Printf("\n\ndelete %d %dbyte file:\n\n", deleteResult.num, size)
 	fmt.Printf("concurrent:             %d\n", deleteResult.concurrent)
 	fmt.Printf("time taken:             %.2f seconds\n", timeTaken)
 	fmt.Printf("completed:              %d\n", deleteResult.completed)
 	fmt.Printf("failed:                 %d\n", deleteResult.failed)
-	//fmt.Printf("transferred:            %d byte\n", readSize)
-	fmt.Printf("request per second:     %.2f\n", float64(deleteResult.completed) / timeTaken)
-	//fmt.Printf("transferred per second: %.2f byte\n", float64(readSize)/timeTaken)
-
+	fmt.Printf("transferred:            %d byte\n", deleteResult.completed * size)
+	fmt.Printf("request per second:     %.2f\n", float64(deleteResult.num) / timeTaken)
+	fmt.Printf("transferred per second: %.2f byte\n", float64(deleteResult.completed) * float64(size) / timeTaken)
 
 }
-
-
-

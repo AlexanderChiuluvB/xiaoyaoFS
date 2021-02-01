@@ -1,9 +1,9 @@
-StoreDir = "~/data/master"
+StoreDir = "/home/hadoop/data"
 
 MasterHost = "localhost"
 MasterPort = 8888
 
-MetaType = "LevelDB"
+MetaType = "ClickHouse"
 
 # ClickHouse
 ClickHouseHost = "tcp://127.0.0.1:9000?debug=true"
