@@ -56,6 +56,11 @@ func NewMaster(config *config.Config) (*Master, error){
 		if err != nil {
 			panic(fmt.Errorf("NewCassandra error %v", err))
 		}
+	case "Hbase":
+		m.Metadata, err = NewHbaseStore(config)
+		if err != nil {
+			panic(fmt.Errorf("new Hbase error %v", err))
+		}
 	}
 	m.Cache, err = newMetaCache(config)
 	if err != nil {

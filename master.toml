@@ -7,7 +7,7 @@ MetaType = "Cassandra"
 
 # Cassandra
 CassandraHosts = ["localhost"]
-Keyspace = "master"
+Keyspace = "xiaoyaofs"
 
 # ClickHouse
 ClickHouseHost = "tcp://127.0.0.1:9000?debug=true"

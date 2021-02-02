@@ -2,15 +2,15 @@ package main
 
 import (
 	"fmt"
-	fuse2 "github.com/AlexanderChiuluvB/xiaoyaoFS/mount"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/master"
+	fuse2 "github.com/AlexanderChiuluvB/xiaoyaoFS/mount"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/storage"
+	b "github.com/AlexanderChiuluvB/xiaoyaoFS/utils/benchmark"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/config"
 	"github.com/AlexanderChiuluvB/xiaoyaoFS/utils/parser"
-	b "github.com/AlexanderChiuluvB/xiaoyaoFS/utils/benchmark"
-	"gopkg.in/alecthomas/kingpin.v2"
 	"github.com/seaweedfs/fuse"
 	"github.com/seaweedfs/fuse/fs"
+	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
 	"os/signal"
 	"syscall"
