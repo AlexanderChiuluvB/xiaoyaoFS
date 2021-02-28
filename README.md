@@ -133,7 +133,9 @@ api名称：uploadFile
      文件参数  multipart
 file=@ 接本地文件路径  api的filepath参数接的是文件在存储系统的路径
 
-获取
+
+
+下载
 ```
 wget -O  localPath.jpg  'http://localhost:8888/getFile?filepath=/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/test/nut.png'
 ```
@@ -142,7 +144,9 @@ api名称：getFile
 参数：   filepath string  //文件在存储系统的路径
 返回值： 文件字节
 
-删除metadata(不会删除Volume中的真实数据)
+
+
+删除
 ```
 curl -X DELETE 'http://localhost:8888/deleteFile?filepath=/Users/alex/go/src/github.com/AlexanderChiuluvB/xiaoyaoFS/test/nut.png'
 ```
